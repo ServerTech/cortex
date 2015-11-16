@@ -1,0 +1,159 @@
+0: Generic Exception.
+
+1: InvalidArgsException thrown on invalid arguments (by value, not type) to functions.
+
+    0: Generic.
+
+    1: Bitboard::Bitboard(int, int, bool, bool, bool, bool): Invalid side.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    2: Bitboard::Bitboard(int, int, bool, bool, bool, bool): Invalid layout type.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    3: Bitboard::get_val(int): Invalid index argument.
+        Outcome: The returned value is bogus (0).
+        Fix: Call the function again with a valid index argument.
+
+    4: Bitboard::set_val(int, U64): Invalid index argument.
+        Outcome: No value set since index was out of bounds.
+        Fix: Call the function again with a valid index argument.
+
+    5: Bitboard::is_castling_legal(int): Invalid index argument.
+        Outcome: The returned value is bogus (0).
+        Fix: Call the function again with a valid index argument.
+
+    6: Move::Move(short, short): Departure and destination cell cannot be the same.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    7: Move::Move(short, short): Departure cell invalid.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    8: Move::Move(short, short): Destination cell invalid.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    9: Move::Move(short, short, short, short): Departure and destination cell cannot be the same.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    10: Move::Move(short, short, short, short): Departure cell invalid.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    11: Move::Move(short, short, short, short): Destination cell invalid.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+    12: Move::Move(short, short, short, short): Invalid index argument for 'what_piece_cap'.
+        Outcome: Corrupt object.
+        Fix: This is thrown by the constructor. Remove and create a new valid object.
+
+2: OutOfBoundsException thrown where variables are out of acceptale bounds.
+
+    0: Generic.
+
+3: BadCharacterException thrown usually when dealing with character arrays.
+
+    0: Generic.
+
+    1: Bitboard::init(char[64]): Invalid character in init argument.
+        Outcome: Unless the cell with the invalid character was supposed to be blank in the first place, corrupt object.
+        Fix: Call the function again with a valid character array.
+
+4: RuntimeErrorException thrown when an unknown bogus value is detected during operation. The cause of this value probably is because of ignoring exceptions 1.1, 1.2 or 1.6.
+
+    0: Generic.
+
+    1: Bitboard::translate_index(int): Layout type found to be invalid.
+        Note: Bitboard::init(char[64]) and Bitboard::pretty() can also catch it, then rethrow it. Such an instance will be logged.
+        Outcome: Detected that the layout type is invalid. The object is corrupt.
+        Fix: If it is a new unused object, remove and create a new valid object. If it has been used already, create a new object with valid arguments, then use Bitboard::init(char[64]) to copy a valid char array (which can be obtained from Bitboard::get_char_array()).
+
+    2: Bitboard::Bitboard(const Bitboard&): Own side found to be invalid.
+        Outcome: Both objects are corrupt.
+        Fix: Operations to fix the original object are probably too expensive. As for the copied one, if it is a new unused object, remove and create a new valid object. If it has been used already, create a new object with valid arguments, then use Bitboard::init(char[64]) to copy a valid char array (which can be obtained from Bitboard::get_char_array()).
+
+    3: Bitboard::Bitboard(const Bitboard&): Layout type found to be invalid.
+        Outcome: Both objects are corrupt.
+        Fix: Operations to fix the original object are probably too expensive. As for the copied one, if it is a new unused object, remove and create a new valid object. If it has been used already, create a new object with valid arguments, then use Bitboard::init(char[64]) to copy a valid char array (which can be obtained from Bitboard::get_char_array()).
+
+    4: Bitboard::pretty(): Cell occupied and white but is not a piece.
+        Outcome: A deeply corrupt object.
+        Fix: Operations to fix the object are probably too expensive. Just create a new one (do not copy).
+
+    5: Bitboard::pretty(): Cell occupied and black but is not a piece.
+        Outcome: A deeply corrupt object.
+        Fix: Operations to fix the object are probably too expensive. Just create a new one (do not copy).
+
+    6: Bitboard::pretty(): Cell occupied but is neither white nor black.
+        Outcome: A deeply corrupt object.
+        Fix: Operations to fix the object are probably too expensive. Just create a new one (do not copy).
+
+    7: Bitboard::get_char_array(): Cell occupied and white but is not a piece.
+        Outcome: A deeply corrupt object.
+        Fix: Operations to fix the object are probably too expensive. Just create a new one (do not copy).
+
+    8: Bitboard::get_char_array(): Cell occupied and black but is not a piece.
+        Outcome: A deeply corrupt object.
+        Fix: Operations to fix the object are probably too expensive. Just create a new one (do not copy).
+
+    9: Bitboard::get_char_array(): Cell occupied but is neither white nor black.
+        Outcome: A deeply corrupt object.
+        Fix: Operations to fix the object are probably too expensive. Just create a new one (do not copy).
+
+    10: Bitboard::move(const Move&): Own side found to be not valid.
+        Outcome: Detected that the own side value is invalid. The object is corrupt.
+        Fix: If it is a new unused object, remove and create a new valid object. If it has been used already, create a new object with valid arguments, then use Bitboard::init(char[64]) to copy a valid char array (which can be obtained from Bitboard::get_char_array()).
+
+    11: Bitboard::determine_type(U64): Own side found to be invalid.
+        Note: Bitboard::move(const Move&) and Bitboard::undo() can also catch it, then rethrow it. Such an instance will be logged.
+        Outcome: Corrupt object.
+        Fix: Remove and re-create object.
+
+    12: Move::Move(const Move&): Departure cell found to be the same as the destination cell.
+        Outcome: Both objects are corrupt.
+        Fix: Need to remove and re-create both objects from scratch. Since the cells are stored as constants, you cannot fix the objects.
+
+    13: Move::Move(const Move&): Departure cell found to be invalid.
+        Outcome: Corrupt object.
+        Fix: Need to remove and re-create both objects from scratch. Since the cells are stored as constants, you cannot fix the objects.
+
+    14: Move::Move(const Move&): Destination cell found to be invalid.
+        Outcome: Corrupt object.
+        Fix: Need to remove and re-create both objects from scratch. Since the cells are stored as constants, you cannot fix the objects.
+
+    15: Move::Move(const Move&): Piece type (what_piece_cap) found to be invalid.
+        Outcome: Both objects are corrupt.
+        Fix: Need to remove and re-create both objects from scratch. Since the cells are stored as constants, you cannot fix the objects.
+
+5: InvalidMoveException thrown when a move trying to be applied to the board is invalid.
+
+    0: Generic.
+
+    1: Bitboard::move(const Move&): Departure cell and destination cell cannot be the same.
+        Outcome: Move will not be made. Also, the Move object is corrupt and needs to be re-created.
+        Fix: Call the function again with a valid move.
+
+    2: Bitboard::move(const Move&): One or both of the departure/destination bitboards supplied by the Move object are blank.
+        Outcome: Move will not be made. Also, the Move object is corrupt and needs to be re-created.
+        Fix: Call the function again with a valid move.
+
+    3: Bitboard::move(const Move&): Departure cell not occupied.
+        Outcome: Move will not be made.
+        Fix: Call the function again with a valid move.
+
+    4: Bitboard::move(const Move&): Unable to determine departure cell piece type.
+        Outcome: Move will not be made.
+        Fix: This is most likely because the Move is not valid for this particular chess board. Or, it could be deep corruption of the Bitboard object. If it's the former, call the functon again with a valid move.
+
+    5: Bitboard::move(const Move&): Trying to kill a friendly piece.
+        Outcome: Move will not be made.
+        Fix: Call the function again with a valid move.
+
+    6: Bitboard::move(const Move&): Piece type (cap_piece) found to be invalid.
+        Outcome: Move will not be made. Also, the Move object is corrupt and needs to be re-created.
+        Fix: Call the function again with a valid move.
