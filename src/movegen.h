@@ -52,11 +52,5 @@ struct MoveList
 
 extern std::string pretty_move_list(const std::vector<Move>& list);
 
-extern void push_quiet_move(std::vector<Move>& list, unsigned int move,
-    const Board& board); // Push quiet move to list.
-extern void push_capture_move(std::vector<Move>& list, unsigned int move,
-    const Board& board); // Push capture move to list.
-extern void push_en_pas_cap_move(std::vector<Move>& list, unsigned int move,
-    const Board& board); // Push en passant move to list.
 extern MoveList gen_moves(const Board& board); // Generate all moves.
 #endif // MOVEGEN_H
