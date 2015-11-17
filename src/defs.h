@@ -171,7 +171,7 @@ inline unsigned int POP_BIT(uint64& bb)
 
 inline unsigned int GET_FILE(unsigned int index)
 {
-    return (index / 8) + 1;
+    return (index % 8) + 1;
 }
 
 /**
@@ -185,7 +185,7 @@ inline unsigned int GET_FILE(unsigned int index)
 
 inline unsigned int GET_RANK(unsigned int index)
 {
-    return (index % 8) + 1;
+    return (index / 8) + 1;
 }
 
 /**
