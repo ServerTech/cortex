@@ -161,6 +161,34 @@ inline unsigned int POP_BIT(uint64& bb)
 }
 
 /**
+    @brief Calculates which file the given cell index is on.
+
+    @param index is the integer index denoting which cell to check.
+
+    @return unsigned int value denoting which file (1 to 8) the cell
+            indexed by 'index' is on.
+*/
+
+inline unsigned int GET_FILE(unsigned int index)
+{
+    return (index / 8) + 1;
+}
+
+/**
+    @brief Calculates which rank the given cell index is on.
+
+    @param index is the integer index denoting which cell to check.
+
+    @return unsigned int value denoting which rank (1 to 8) the cell
+            indexed by 'index' is on.
+*/
+
+inline unsigned int GET_RANK(unsigned int index)
+{
+    return (index % 8) + 1;
+}
+
+/**
     @brief Given a file and rank, returns the index of the cell.
 
     Given a file and rank, this function finds a cell on the board
