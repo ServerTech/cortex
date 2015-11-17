@@ -213,7 +213,7 @@ inline bool IS_PSTR(unsigned int move)
     @return bool representing whether 'move' is a castling move.
 */
 
-inline bool IS_CAST(unsigned int move)
+inline bool IS_CAS(unsigned int move)
 {
     return move & 0x400000;
 }
