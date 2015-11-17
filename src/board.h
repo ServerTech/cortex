@@ -131,6 +131,8 @@ struct UndoMove
     @warning Do NOT place pawns on ranks one or eight. This is an
              impossible occurrence, and the engine will fail to promote them.
              In fact, they might vanish.
+    @warning White must start at the bottom of the board, or move generation
+             for pawns will not function correctly.
     @warning 'en_pas_sq' or the en passant square should be set to value
              'NO_SQ' (64) when there is no en passant square.
     @warning 'ply' is for use by search only, while 'his_ply' stores the
