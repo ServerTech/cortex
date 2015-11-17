@@ -32,7 +32,7 @@
 
     @var list is a vector of Move objects, storing the list of moves.
     @var attacked is a bitboard representation of the cells on the board
-         that are currently under attack (for the side the moves are being
+         that are currently under attack (by the side the moves are being
          generated for).
 */
 
