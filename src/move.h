@@ -162,7 +162,7 @@ inline unsigned int PROMOTED(unsigned int move)
 
 inline bool IS_CAP(unsigned int move)
 {
-    if(CAPTURED(move) == 14) return 0; else return 1;
+    if(CAPTURED(move) == EMPTY) return 0; else return 1;
 }
 
 /**
@@ -188,7 +188,7 @@ inline bool IS_ENPAS_CAP(unsigned int move)
 
 inline bool IS_PROM(unsigned int move)
 {
-    if(PROMOTED(move) == 14) return 0; else return 1;
+    if(PROMOTED(move) == EMPTY) return 0; else return 1;
 }
 
 /**
@@ -230,6 +230,10 @@ inline bool IS_CAST(unsigned int move)
 
     @return unsigned int value representing the move defined by the given
             parameters.
+
+    @warning 'cap_piece' should be EMPTY (14) if none.
+    @warning 'prom_piece' should be EMPTY (14) if none.
+    @warning 'flag' should be zero if none.
 */
 
 inline unsigned int GET_MOVE(unsigned int dep, unsigned int dst,
