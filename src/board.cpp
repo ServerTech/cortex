@@ -185,22 +185,26 @@ bool parse_fen(Board& board, const std::string fen)
 
     count = 0; // Used to make sure the loop isn't crazy, due to incorrect FEN.
 
-    while((c = fen[i]) != ' ')
+    if((c = fen[i]) != '-') // Castling permissions exist.
     {
-        if(count == 4) return 0; // Parse error.
-
-        switch(c)
+        while(c != ' ')
         {
-            case 'K': board.castle_perm |= WKCA; break;
-            case 'Q': board.castle_perm |= WQCA; break;
-            case 'k': board.castle_perm |= BKCA; break;
-            case 'q': board.castle_perm |= BQCA; break;
-            default: return 0; // Parse error.
-        }
+            if(count == 4) return 0; // Parse error.
 
-        count++;
-        i++;
+            switch(c)
+            {
+                case 'K': board.castle_perm |= WKCA; break;
+                case 'Q': board.castle_perm |= WQCA; break;
+                case 'k': board.castle_perm |= BKCA; break;
+                case 'q': board.castle_perm |= BQCA; break;
+                default: return 0; // Parse error.
+            }
+
+            count++;
+            i++;
+        }
     }
+    else i++;
 
     i++;
 
@@ -398,6 +402,7 @@ std::string pretty_board(const Board& board)
     if(board.castle_perm & WQCA) pretty_str << "Q";
     if(board.castle_perm & BKCA) pretty_str << "k";
     if(board.castle_perm & BQCA) pretty_str << "q";
+    if(board.castle_perm == 0) pretty_str << "None";
 
     pretty_str << "\n";
 
