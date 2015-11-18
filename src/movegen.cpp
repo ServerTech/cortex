@@ -12,7 +12,7 @@
 */
 
 #include <sstream> // std::stringstream
-
+#include <iostream>
 #include "movegen.h"
 #include "lookup_tables.h"
 
