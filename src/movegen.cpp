@@ -12,7 +12,7 @@
 */
 
 #include <sstream> // std::stringstream
-#include <iostream>
+
 #include "movegen.h"
 #include "lookup_tables.h"
 
@@ -43,7 +43,14 @@ std::string pretty_move_list(const std::vector<Move>& list)
         pretty_str << "Move " << i + 1 << ": " << COORD_MOVE(list.at(i).move);
         pretty_str << "    Score: " << list.at(i).score;
         pretty_str << "    Captured: " << CAPTURED(list.at(i).move);
-        pretty_str << "    Promoted: " << PROMOTED(list.at(i).move) << "\n";
+        pretty_str << "    Promoted: " << PROMOTED(list.at(i).move);
+        pretty_str << "    Flags:";
+
+        if(IS_PSTR(list.at(i).move)) pretty_str << " PS";
+        else if(IS_ENPAS_CAP(list.at(i).move)) pretty_str << " EPCAP";
+        else if(IS_CAS(list.at(i).move)) pretty_str << " CA";
+
+        pretty_str << "\n";
     }
 
     pretty_str << "\nTotal moves: " << s;
@@ -155,7 +162,7 @@ MoveList gen_moves(const Board& board)
 
                 // Two cells upward
 
-                u64_2 = (u64_2 << 16) & B_RANK[2] & FREE;
+                u64_2 = (u64_2 << 16) & B_RANK[4] & FREE;
 
                 if(u64_2 != 0ULL) push_quiet_move(ml.list,
                     GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, MFLAGPS),
@@ -280,7 +287,7 @@ MoveList gen_moves(const Board& board)
 
                 // Two cells downward
 
-                u64_2 = (u64_2 >> 16) & B_RANK[6] & FREE;
+                u64_2 = (u64_2 >> 16) & B_RANK[5] & FREE;
 
                 if(u64_2 != 0ULL) push_quiet_move(ml.list,
                     GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, MFLAGPS),
