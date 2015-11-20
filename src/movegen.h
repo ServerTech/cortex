@@ -31,7 +31,7 @@
     under attack. This helps with checking whether the king is in check.
 
     @var list is a vector of Move objects, storing the list of moves.
-    @var attacked is a bitboard representation of the cells on the board
+    @var attacked is a bitboard representation of the pieces on the board
          that are currently under attack (by the side the moves are being
          generated for).
 */
@@ -39,7 +39,7 @@
 struct MoveList
 {
     std::vector<Move> list; // Vector of moves.
-    uint64 attacked; // Bitboard representation of all cells under attack.
+    uint64 attacked; // Bitboard representation of all pieces under attack.
 
     MoveList()
     :list(), attacked(0ULL)
@@ -53,4 +53,5 @@ struct MoveList
 extern std::string pretty_move_list(const std::vector<Move>& list);
 
 extern MoveList gen_moves(const Board& board); // Generate all moves.
+
 #endif // MOVEGEN_H
