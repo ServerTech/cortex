@@ -59,7 +59,7 @@
 
 #include <sstream> // std::stringstream
 #include <ctype.h> // isalpha() and isdigit()
-#include <iostream>
+
 #include "board.h"
 #include "move.h" // COORD()
 #include "hash.h" // gen_hash()
