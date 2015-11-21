@@ -8,7 +8,7 @@
 
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
-    * 15/11/2015 0.1.0 Initial version.
+    * 21/11/2015 0.1.0 Initial version.
 */
 
 #ifndef MOVEGEN_H
@@ -51,6 +51,26 @@ struct MoveList
 // Returns a 'pretty' version of the move list for standard output.
 
 extern std::string pretty_move_list(const std::vector<Move>& list);
+
+// Generate moves for rooks/line moves for queens.
+
+extern void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board);
+
+// Generate moves for knights.
+
+extern void gen_knight_moves(MoveList& ml, const Board& board);
+
+// Generate moves for bishops/diagonal moves for queens.
+
+extern void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board);
+
+// Generate moves for pawns.
+
+extern void gen_pawn_moves(uint64 u64_1, MoveList& ml, const Board& board);
+
+// Generate moves for kings.
+
+extern void gen_king_moves(MoveList& ml, const Board& board);
 
 extern MoveList gen_moves(const Board& board); // Generate all moves.
 
