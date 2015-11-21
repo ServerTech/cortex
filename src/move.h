@@ -82,11 +82,6 @@ struct Move
     Move(unsigned int m, unsigned int s)
     :move(m), score(s)
     {}
-
-    //bool operator<(const Move& str) const
-    //{
-    //   return str.score < str;
-    //}
 };
 
 // Helper functions to dissect moves
