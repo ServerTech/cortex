@@ -24,8 +24,6 @@ typedef unsigned long long uint64;
 
 // Globals
 
-enum { FALSE, TRUE };
-
 enum { BLACK, WHITE };
 
 enum { WKCA = 8, WQCA = 4, BKCA = 2, BQCA = 1 };
