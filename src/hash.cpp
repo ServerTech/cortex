@@ -19,6 +19,11 @@
 #include "hash.h"
 #include "defs.h"
 
+// Prototypes
+
+void init_hash();
+uint64 gen_hash(const Board& board);
+
 // Globals
 
 uint64 PIECE_KEYS[13][64]; // 64 keys for each piece, plus 64 for en passant.

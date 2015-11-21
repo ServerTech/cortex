@@ -65,6 +65,14 @@
 #include "hash.h" // gen_hash()
 #include "lookup_tables.h" // Lookup tables
 
+// Prototypes
+
+void reset_board(Board& board);
+bool parse_fen(Board& board, const std::string fen);
+unsigned int determine_type(const Board& board, uint64 bit_chk);
+char conv_char(const Board& board, unsigned int index);
+std::string pretty_board(const Board& board);
+
 // Functions
 
 /**
