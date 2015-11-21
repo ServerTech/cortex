@@ -240,29 +240,6 @@ bool parse_fen(Board& board, const std::string fen)
 }
 
 /**
-    @brief Determines whether the given cell index is under attack.
-
-    This function uses the attack lookup tables to determine whether the cell
-    indexed by 'index' is currently under attack.
-
-    @param board is the board to check on.
-    @param index is the integer index of the cell to check in LERF layout.
-
-    @return bool denoting whether the cell indexed by 'index' is under attack
-            on the board represented by 'board'.
-
-    @warning 'index' must be between (or equal to) 0 and 63.
-    @warning 'index' must be in LERF layout.
-*/
-
-//bool is_attacked(const Board& board, unsigned int index)
-//{
-//    assert(index < 64);
-//
-//
-//}
-
-/**
     @brief Determines the type of pieces occupying a cell.
 
     @param board is the board on which to check on.

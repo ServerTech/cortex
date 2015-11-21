@@ -221,10 +221,6 @@ inline void update_secondary(Board& board)
 extern void reset_board(Board& board); // Resets the board.
 extern bool parse_fen(Board& board, const std::string fen); // Parse FEN.
 
-// Check if a cell is under attack.
-
-//extern bool is_attacked(const Board& board, unsigned int index);
-
 // Determine type of piece.
 
 extern unsigned int determine_type(const Board& board, uint64 bit_chk);
