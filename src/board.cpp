@@ -59,7 +59,7 @@
 
 #include <sstream> // std::stringstream
 #include <ctype.h> // isalpha() and isdigit()
-
+#include <iostream>
 #include "board.h"
 #include "move.h" // COORD()
 #include "hash.h" // gen_hash()
@@ -185,9 +185,9 @@ bool parse_fen(Board& board, const std::string fen)
 
     count = 0; // Used to make sure the loop isn't crazy, due to incorrect FEN.
 
-    if((c = fen[i]) != '-') // Castling permissions exist.
+    if(fen[i] != '-') // Castling permissions exist.
     {
-        while(c != ' ')
+        while((c = fen[i]) != ' ')
         {
             if(count == 4) return 0; // Parse error.
 
