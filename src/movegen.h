@@ -8,7 +8,7 @@
 
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
-    * 21/11/2015 0.1.0 Initial version.
+    * 22/11/2015 0.1.0 Initial version.
 */
 
 #ifndef MOVEGEN_H
@@ -58,7 +58,7 @@ extern void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board);
 
 // Generate moves for knights.
 
-extern void gen_knight_moves(MoveList& ml, const Board& board);
+extern void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board);
 
 // Generate moves for bishops/diagonal moves for queens.
 
@@ -71,6 +71,11 @@ extern void gen_pawn_moves(uint64 u64_1, MoveList& ml, const Board& board);
 // Generate moves for kings.
 
 extern void gen_king_moves(MoveList& ml, const Board& board);
+
+// Check if a cell is under attack.
+
+extern bool is_sq_attacked(unsigned int index, unsigned int a_side,
+    const Board& board);
 
 extern MoveList gen_moves(const Board& board); // Generate all moves.
 

@@ -8,13 +8,30 @@
 
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
-    * 21/11/2015 0.1.0 Initial version.
+    * 22/11/2015 0.1.0 Initial version.
 */
 
 #include <sstream> // std::stringstream
 
 #include "movegen.h"
 #include "lookup_tables.h"
+
+// Prototypes
+
+std::string pretty_move_list(const std::vector<Move>& list);
+inline void push_quiet_move(std::vector<Move>& list, unsigned int move,
+    const Board& board);
+inline void push_capture_move(std::vector<Move>& list, unsigned int move,
+    const Board& board);
+inline void push_castling_move(std::vector<Move>& list, unsigned int move);
+void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board);
+void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board);
+void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board);
+void gen_pawn_moves(MoveList& ml, const Board& board);
+void gen_king_moves(MoveList& ml, const Board& board);
+bool is_sq_attacked(unsigned int index, unsigned int a_side,
+    const Board& board);
+MoveList gen_moves(const Board& board);
 
 // Functions
 
@@ -105,6 +122,21 @@ inline void push_quiet_move(std::vector<Move>& list, unsigned int move,
 
 inline void push_capture_move(std::vector<Move>& list, unsigned int move,
     const Board& board)
+{
+    Move move_push(move, 0);
+    list.push_back(move_push);
+}
+
+/**
+    @brief Pushes a castling move to the move list vector.
+
+    @param list is the move list vector.
+    @param move is an integer value representing the move.
+
+    @return void.
+*/
+
+inline void push_castling_move(std::vector<Move>& list, unsigned int move)
 {
     Move move_push(move, 0);
     list.push_back(move_push);
@@ -286,6 +318,7 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
     @brief Generates and pushes all pseudo-legal knight moves into the move
            list vector for the given board state.
 
+    @param u64_1 is the bitboard representing all knights.
     @param ml is the move list structure to which the generated moves are
            to be pushed.
     @param board is the board on which the moves are to be generated.
@@ -293,7 +326,7 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
     @return void.
 */
 
-void gen_knight_moves(MoveList& ml, const Board& board)
+void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board)
 {
     const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
     const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
@@ -301,13 +334,10 @@ void gen_knight_moves(MoveList& ml, const Board& board)
     const uint64 FREE = ~white_bb & ~black_bb; // Free bitboard.
 
     unsigned int uint_1, uint_2, uint_3; // Temporary variables.
-    uint64 u64_1, u64_2; // Temporary variables.
+    uint64 u64_2; // Temporary variable.
     unsigned int bit_cnt; // Number of bits; temporary variable.
 
     // Generation
-
-    if(board.side == WHITE) u64_1 = board.chessboard[wN];
-    else u64_1 = board.chessboard[bN];
 
     bit_cnt = CNT_BITS(u64_1);
 
@@ -834,7 +864,7 @@ void gen_pawn_moves(MoveList& ml, const Board& board)
 
     @return void.
 
-    @warning There must be only ONE king.
+    @warning There must be exactly ONE king (zero is also invalid).
 */
 
 void gen_king_moves(MoveList& ml, const Board& board)
@@ -884,7 +914,165 @@ void gen_king_moves(MoveList& ml, const Board& board)
 
     // Castling
 
+    if(board.castle_perm)
+    {
+        if(board.side == WHITE)
+        {
+            if(board.castle_perm & WKCA) // White king-side castling
+            {
+                if(!is_sq_attacked(e1, WHITE, board) && !is_sq_attacked(f1, WHITE, board))
+                {
+                    push_castling_move(ml.list, GET_MOVE(e1, g1, EMPTY, EMPTY,
+                        MFLAGCA));
+                }
+            }
 
+            if(board.castle_perm & WQCA) // White queen-side castling
+            {
+                if(!is_sq_attacked(e1, WHITE, board) && !is_sq_attacked(d1, WHITE, board))
+                {
+                    push_castling_move(ml.list, GET_MOVE(e1, d1, EMPTY, EMPTY,
+                        MFLAGCA));
+                }
+            }
+        }
+        else
+        {
+            if(board.castle_perm & BKCA) // Black king-side castling
+            {
+                if(!is_sq_attacked(e8, WHITE, board) && !is_sq_attacked(f8, WHITE, board))
+                {
+                    push_castling_move(ml.list, GET_MOVE(e8, g8, EMPTY, EMPTY,
+                        MFLAGCA));
+                }
+            }
+
+            if(board.castle_perm & BQCA) // Black queen-side castling
+            {
+                if(!is_sq_attacked(e8, WHITE, board) && !is_sq_attacked(d8, WHITE, board))
+                {
+                    push_castling_move(ml.list, GET_MOVE(e8, c8, EMPTY, EMPTY,
+                        MFLAGCA));
+                }
+            }
+        }
+    }
+}
+
+/**
+    @brief Determines whether the given cell index is under attack.
+
+    This function efficiently generates captures moves and such, to check
+    the given cell is currently under attack for the player denoted by
+    'a_side'. It works by imagining a rook and bishop on the cell, belonging
+    to 'a_side', and finding if this rook attacks any pieces. If the attacked
+    pieces happen to be queens, rooks or bishops of the opposite site, the cell
+    is attacked. There are also checks to check for pawns and knights.
+
+    @param index is the integer index of the cell to check in LERF layout.
+    @param a_side is the side to be considered when checking whether the cell
+           indexed by 'index' is attacked. It represents the defender.
+    @param board is the board to check on.
+
+    @return bool denoting whether the cell indexed by 'index' is under attack
+            by the opposite side (opposite to 'a_side').
+
+    @warning 'index' must be between (or equal to) 0 and 63.
+    @warning 'index' must be in LERF layout.
+*/
+
+bool is_sq_attacked(unsigned int index, unsigned int a_side,
+    const Board& board)
+{
+    Board b_copy = board; // Temporary board to get around 'const' on 'board'.
+
+    MoveList ml; // Temporary list.
+
+    unsigned int uint_1, uint_2; // Temporary variable.
+    uint64 u64_1; // Temporary variable.
+
+    u64_1 = GET_BB(index);
+
+    // Check for pawns
+
+    if(a_side == WHITE) // Check for black pawns
+    {
+        if((u64_1 << 7 | u64_1 << 9) & b_copy.chessboard[bP])
+            return 1;
+    }
+    else // Check for white pawns
+    {
+        if((u64_1 >> 7 | u64_1 >> 9) & b_copy.chessboard[wP])
+            return 1;
+    }
+
+    // Change the side to play if required
+
+    b_copy.side = a_side;
+
+    // Check knights
+
+    gen_knight_moves(u64_1, ml, b_copy);
+
+    uint_1 = ml.list.size();
+
+    for(unsigned int i = 0; i < uint_1; i++)
+    {
+        uint_2 = CAPTURED(ml.list.at(i).move);
+
+        if(a_side == WHITE) // Check if black knight
+        {
+            if(uint_2 == bN) return 1;
+        }
+        else // Check if white knight
+        {
+            if(uint_2 == wN) return 1;
+        }
+    }
+
+    // Check lines
+
+    ml.list.clear();
+
+    gen_rook_moves(u64_1, ml, b_copy);
+
+    uint_1 = ml.list.size();
+
+    for(unsigned int i = 0; i < uint_1; i++)
+    {
+        uint_2 = CAPTURED(ml.list.at(i).move);
+
+        if(a_side == WHITE) // Check if black rook/queen
+        {
+            if(uint_2 == bR || uint_2 == bQ) return 1;
+        }
+        else // Check if white rook/queen
+        {
+            if(uint_2 == wR || uint_2 == wQ) return 1;
+        }
+    }
+
+    ml.list.clear();
+
+    gen_bishop_moves(u64_1, ml, b_copy);
+
+    uint_1 = ml.list.size();
+
+    for(unsigned int i = 0; i < uint_1; i++)
+    {
+        uint_2 = CAPTURED(ml.list.at(i).move);
+
+        if(a_side == WHITE) // Check if black bishop/queen
+        {
+            if(uint_2 == bB || uint_2 == bQ) return 1;
+        }
+        else // Check if white bishop/queen
+        {
+            if(uint_2 == wB || uint_2 == wQ) return 1;
+        }
+    }
+
+    return 0;
 }
 
 /**
@@ -927,7 +1115,10 @@ MoveList gen_moves(const Board& board)
 
     // Knights
 
-    gen_knight_moves(ml, board);
+    if(board.side == WHITE) // White knights
+        gen_knight_moves(board.chessboard[wN], ml, board);
+    else // Black knights
+        gen_knight_moves(board.chessboard[bN], ml, board);
 
     // Bishops
 
