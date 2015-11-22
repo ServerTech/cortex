@@ -996,6 +996,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
     const Board& board)
 {
     MoveList ml; // Temporary list.
+    ml.list.reserve(16);
 
     unsigned int uint_1, uint_2; // Temporary variable.
     uint64 u64_1; // Temporary variable.
