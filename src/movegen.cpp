@@ -946,7 +946,7 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
                 if(not_in_check && (determine_type(board, GET_BB(d1)) == EMPTY) &&
                     !is_sq_attacked(d1, WHITE, board))
                 {
-                    push_castling_move(ml.list, GET_MOVE(e1, d1, EMPTY, EMPTY,
+                    push_castling_move(ml.list, GET_MOVE(e1, c1, EMPTY, EMPTY,
                         MFLAGCA));
                 }
             }
