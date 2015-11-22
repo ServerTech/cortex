@@ -933,7 +933,8 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(board.castle_perm & WKCA) // White king-side castling
             {
-                if(not_in_check && !is_sq_attacked(f1, WHITE, board))
+                if(not_in_check && (determine_type(board, GET_BB(f1)) == EMPTY) &&
+                    !is_sq_attacked(f1, WHITE, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e1, g1, EMPTY, EMPTY,
                         MFLAGCA));
@@ -942,7 +943,8 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(board.castle_perm & WQCA) // White queen-side castling
             {
-                if(not_in_check && !is_sq_attacked(d1, WHITE, board))
+                if(not_in_check && (determine_type(board, GET_BB(d1)) == EMPTY) &&
+                    !is_sq_attacked(d1, WHITE, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e1, d1, EMPTY, EMPTY,
                         MFLAGCA));
@@ -955,7 +957,8 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(board.castle_perm & BKCA) // Black king-side castling
             {
-                if(not_in_check && !is_sq_attacked(f8, BLACK, board))
+                if(not_in_check && (determine_type(board, GET_BB(f8)) == EMPTY) &&
+                    !is_sq_attacked(f8, BLACK, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e8, g8, EMPTY, EMPTY,
                         MFLAGCA));
@@ -964,7 +967,8 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(board.castle_perm & BQCA) // Black queen-side castling
             {
-                if(not_in_check && !is_sq_attacked(d8, BLACK, board))
+                if(not_in_check && (determine_type(board, GET_BB(d8)) == EMPTY) &&
+                    !is_sq_attacked(d8, BLACK, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e8, c8, EMPTY, EMPTY,
                         MFLAGCA));
