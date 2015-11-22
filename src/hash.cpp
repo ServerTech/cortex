@@ -1,6 +1,6 @@
 /*
     Cortex - Self-learning Chess Engine
-    @filename hash.h
+    @filename hash.cpp
     @author Shreyas Vinod
     @version 0.1.1
 
