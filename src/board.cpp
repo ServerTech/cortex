@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.cpp
     @author Shreyas Vinod
-    @version 0.4.0
+    @version 0.4.1
 
     @brief Handles the board representation for the engine.
 
@@ -55,6 +55,7 @@
         * Supports initialisation with a FEN string.
         * Better support for disabling std::assert() with #define NDEBUG.
         * Now uses typedef unsigned long long instead of 'uint64_t'.
+    * 22/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
 */
 
 #include <sstream> // std::stringstream
@@ -62,7 +63,8 @@
 
 #include "board.h"
 #include "move.h" // COORD()
-#include "hash.h" // gen_hash()
+#include "movegen.h" // is_sq_attacked()
+#include "hash.h" // gen_hash() and hash helper functions
 #include "lookup_tables.h" // Lookup tables
 
 // Prototypes
@@ -72,6 +74,18 @@ bool parse_fen(Board& board, const std::string fen);
 unsigned int determine_type(const Board& board, uint64 bit_chk);
 char conv_char(const Board& board, unsigned int index);
 std::string pretty_board(const Board& board);
+inline void spawn_piece(Board& board, unsigned int piece_type,
+    unsigned int index);
+inline void obliterate_piece(Board& board, unsigned int piece_type,
+    unsigned int index);
+inline void move_piece_tu(Board& board, unsigned int dep_cell,
+    unsigned int dst_cell);
+inline void move_piece_tk(Board& board, unsigned int piece_type,
+    unsigned int dep_cell, unsigned int dst_cell);
+inline void move_piece_cap(Board& board, unsigned int piece_type,
+    unsigned int cap_type, unsigned int dep_cell, unsigned int dst_cell);
+bool make_move(Board& board, unsigned int move);
+void undo_move(Board& board);
 
 // Functions
 
@@ -407,4 +421,339 @@ std::string pretty_board(const Board& board)
     pretty_str << "Zobrist hash: " << board.hash_key;
 
     return pretty_str.str();
+}
+
+/**
+    @brief Adds a piece on a given cell on the given board.
+
+    @param board is the move to add the piece on.
+    @param piece_type is type of piece to add on the cell.
+    @param index is the integer index representing the cell on which the piece
+           should exist.
+
+    @return void.
+
+    @warning 'piece_type' must be between (or equal to) wP (0) and bK (11).
+    @warning 'index' must be between (or equal to) 0 and 63.
+*/
+
+inline void spawn_piece(Board& board, unsigned int piece_type,
+    unsigned int index)
+{
+    assert(piece_type < 12);
+    assert(index < 64);
+
+    uint64 cell_bb = GET_BB(index);
+
+    HASH_PIECE(board, piece_type, index); // Hash piece in.
+
+    board.chessboard[piece_type] |= cell_bb;
+
+    if(piece_type <= wK) // Added piece is white.
+        board.chessboard[ALL_WHITE] |= cell_bb;
+    else // Removed piece is black.
+        board.chessboard[ALL_BLACK] |= cell_bb;
+}
+
+/**
+    @brief Clears a piece on a given cell on the given board.
+
+    @param board is the move to clear the piece on.
+    @param piece_type is the type of piece being cleared.
+    @param index is the integer index representing the cell on which the piece
+           exists.
+
+    @return void.
+
+    @warning A piece must exist on the cell indexed by 'index', but this is NOT
+             checked.
+    @warning 'piece_type' must be between (or equal to) wP (0) and bK (11).
+    @warning 'index' must be between (or equal to) 0 and 63.
+*/
+
+inline void obliterate_piece(Board& board, unsigned int piece_type,
+    unsigned int index)
+{
+    assert(piece_type < 12);
+    assert(index < 64);
+
+    uint64 cell_bb = GET_BB(index);
+
+    HASH_PIECE(board, piece_type, index); // Hash piece out.
+
+    board.chessboard[piece_type] ^= cell_bb;
+
+    if(piece_type <= wK) // Removed piece is white.
+        board.chessboard[ALL_WHITE] ^= cell_bb;
+    else // Removed piece is black.
+        board.chessboard[ALL_BLACK] ^= cell_bb;
+}
+
+/**
+    @brief Moves a piece from one cell to another. This function should be used
+           if the type of piece being moved is unknown.
+
+    @param board is the move to move the piece on.
+    @param dep_cell is the integer index representing the departure cell.
+    @param dst_cell is the integer index representing the destination cell.
+
+    @warning A piece must exist on the cell indexed by 'dep_cell', but this is
+             NOT checked.
+    @warning This function only moves a piece. It will not check whether a
+             piece already exists on the destination cell. That is, it will
+             not make capture moves. Use move_piece_cap() for capture moves.
+    @warning 'dep_cell' must be between (or equal to) 0 and 63.
+    @warning 'dst_cell' must be between (or equal to) 0 and 63.
+*/
+
+inline void move_piece_tu(Board& board, unsigned int dep_cell,
+    unsigned int dst_cell)
+{
+    assert(dep_cell < 64);
+    assert(dst_cell < 64);
+
+    unsigned int piece_type = determine_type(board, GET_BB(dep_cell));
+
+    obliterate_piece(board, piece_type, dep_cell);
+    spawn_piece(board, piece_type, dst_cell);
+}
+
+/**
+    @brief Moves a piece from one cell to another. This function should be used
+           if the type of piece being moved is known.
+
+    @param board is the move to move the piece on.
+    @param piece_type is the type of piece being moved.
+    @param dep_cell is the integer index representing the departure cell.
+    @param dst_cell is the integer index representing the destination cell.
+
+    @warning A piece must exist on the cell indexed by 'dep_cell', but this is
+             NOT checked.
+    @warning This function only moves a piece. It will not check whether a
+             piece already exists on the destination cell. That is, it will
+             not make capture moves.
+    @warning 'piece_type' must be between (or equal to) wP (0) and bK (11).
+    @warning 'dep_cell' must be between (or equal to) 0 and 63.
+    @warning 'dst_cell' must be between (or equal to) 0 and 63.
+*/
+
+inline void move_piece_tk(Board& board, unsigned int piece_type,
+    unsigned int dep_cell, unsigned int dst_cell)
+{
+    assert(piece_type < 12);
+    assert(dep_cell < 64);
+    assert(dst_cell < 64);
+
+    obliterate_piece(board, piece_type, dep_cell);
+    spawn_piece(board, piece_type, dst_cell);
+}
+
+/**
+    @brief Make the given move on the given board.
+
+    @param board is the board to make the move on.
+    @param move is the integer representation of the move to be made in
+           standard convention.
+
+    @return bool value representing whether move was actually made, that is,
+            if the given move was legal.
+*/
+
+bool make_move(Board& board, unsigned int move)
+{
+    unsigned int dep = DEP_CELL(move);
+    unsigned int dst = DST_CELL(move);
+    unsigned int dep_type = determine_type(board, GET_BB(dep));
+    unsigned int cap_type = CAPTURED(move);
+    unsigned int prom_type = PROMOTED(move);
+    uint64 king_bb; // Used to check move legality.
+
+    bool side = board.side;
+
+    if(side == WHITE) king_bb = board.chessboard[wK];
+    else king_bb = board.chessboard[bK];
+
+    UndoMove undo_ms(move, board.castle_perm, board.en_pas_sq, board.fifty,
+        board.hash_key); // Create the undo move structure.
+
+    board.history.push_back(undo_ms); // Push undo structure into history.
+
+    // Clear en passant square
+
+    if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash en passant square out.
+    board.en_pas_sq = NO_SQ; // Set en passant square to 'NO_SQ' (65).
+
+    // Increment counters
+
+    board.ply++;
+    board.his_ply++;
+    board.fifty++;
+
+    // Handle special cases
+
+    if((dep_type == wP) || (dep_type == bP)) // Pawn move
+    {
+        board.fifty = 0; // Reset fifty-move rule counter.
+
+        if(IS_PSTR(move)) // Pawn start
+        {
+            // Update en passant square.
+
+            if(side == WHITE) board.en_pas_sq = dst - 8;
+            else board.en_pas_sq = dst + 8;
+
+            HASH_EP(board); // Hash en passant square in.
+        }
+
+        if(IS_ENPAS_CAP(move)) // En passant capture
+        {
+            assert((cap_type == wP) || (cap_type == bP));
+
+            if(side == WHITE) obliterate_piece(board, bP, dst - 8);
+            else obliterate_piece(board, wP, dst + 8);
+        }
+    }
+    else if(IS_CAS(move)) // Move rook if castling
+    {
+        switch(dst)
+        {
+            case g1: move_piece_tk(board, wR, h1, f1); break;
+            case c1: move_piece_tk(board, wR, a1, d1); break;
+            case g8: move_piece_tk(board, bR, h8, f8); break;
+            case c8: move_piece_tk(board, bR, a8, d8); break;
+            default: assert(false); break; // Something's wrong with castling.
+        }
+    }
+
+    // Update fifty-move rule counter and clear captured piece, if any.
+
+    if((cap_type != EMPTY) && !IS_ENPAS_CAP(move))
+    {
+        assert(((side == WHITE && cap_type > 5) ||
+            (side == BLACK && cap_type < 6)) && cap_type < 12);
+
+        obliterate_piece(board, cap_type, dst);
+        board.fifty = 0;
+    }
+
+    move_piece_tu(board, dep, dst); // Move the piece.
+
+    // Update as necessary if the move is a promotion.
+
+    if(prom_type != EMPTY)
+    {
+        assert((prom_type < 12) && (prom_type != wP) && (prom_type != bP));
+
+        if(side == WHITE) // Clear the pawn.
+            obliterate_piece(board, wP, dst);
+        else
+            obliterate_piece(board, bP, dst);
+
+        spawn_piece(board, prom_type, dst); // Add the promoted piece.
+    }
+
+    board.side = !board.side; // Swap sides.
+    HASH_SIDE(board); // Hash the side (swap).
+
+    assert(king_bb);
+
+    if(is_sq_attacked(POP_BIT(king_bb), side, board)) // Check move legality.
+    {
+        undo_move(board);
+
+        return 0; // The move was illegal and hence not made.
+    }
+
+    return 1; // The move was legal and has been correctly made.
+}
+
+/**
+    @brief Undo the previous move.
+
+    This function unmakes the previous move that was made on the board.
+    If there is no move to undo, the function simply returns.
+
+    @param board is the board to undo the move on.
+
+    @return void.
+*/
+
+void undo_move(Board& board)
+{
+    UndoMove ms = board.history.back();
+
+    unsigned int move = ms.move;
+    unsigned int dep = DEP_CELL(ms.move);
+    unsigned int dst = DST_CELL(ms.move);
+    unsigned int cap_type = CAPTURED(ms.move);
+    unsigned int prom_type = PROMOTED(ms.move);
+
+    bool side = !board.side;
+
+    // Decrement ply counters
+
+    board.ply--;
+    board.his_ply--;
+
+    if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash out en passant square.
+
+    HASH_CA(board); // Hash out castling permissions.
+
+    board.castle_perm = ms.castle_perm;
+    board.en_pas_sq = ms.en_pas_sq;
+    board.fifty = ms.fifty;
+
+    if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash in en passant square.
+
+    HASH_CA(board); // Hash in castling permissions.
+
+    board.side = !board.side; // Swap sides.
+    HASH_SIDE(board); // Hash the side (swap).
+
+    // Handle special cases
+
+    if(IS_ENPAS_CAP(move)) // En passant capture
+    {
+        assert((cap_type == wP) || (cap_type == bP));
+
+        if(side == WHITE) spawn_piece(board, bP, dst - 8);
+        else spawn_piece(board, wP, dst + 8);
+    }
+    else if(IS_CAS(move)) // Move rook if castling
+    {
+        switch(dst)
+        {
+            case g1: move_piece_tk(board, wR, f1, h1); break;
+            case c1: move_piece_tk(board, wR, d1, a1); break;
+            case g8: move_piece_tk(board, bR, f8, h8); break;
+            case c8: move_piece_tk(board, bR, d8, a8); break;
+            default: assert(false); break; // Something's wrong with castling.
+        }
+    }
+
+    move_piece_tu(board, dst, dep); // Move the piece back.
+
+    // Put the captured piece back where it was.
+
+    if((cap_type != EMPTY) && !IS_ENPAS_CAP(move))
+    {
+        assert(((side == WHITE && cap_type > 5) ||
+            (side == BLACK && cap_type < 6)) && cap_type < 12);
+
+        spawn_piece(board, cap_type, dst);
+    }
+
+    // Demote the pawn!
+
+    if(prom_type != EMPTY)
+    {
+        assert((prom_type < 12) && (prom_type != wP) && (prom_type != bP));
+
+        obliterate_piece(board, prom_type, dep); // Clear the promote piece.
+
+        if(side == WHITE) // Add a pawn on the departure cell.
+            spawn_piece(board, wP, dep);
+        else
+            spawn_piece(board, bP, dep);
+    }
 }

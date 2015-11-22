@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.0
+    @version 0.4.1
 
     @brief Handles the board representation for the engine.
 
@@ -55,6 +55,7 @@
         * Supports initialisation with a FEN string.
         * Better support for disabling std::assert() with #define NDEBUG.
         * Now uses typedef unsigned long long instead of 'uint64_t'.
+    * 22/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
 */
 
 #ifndef BOARD_H
@@ -96,6 +97,10 @@ struct UndoMove
     unsigned int en_pas_sq; // En passant square, BEFORE the move.
     unsigned int fifty; // Fifty-move rule counter, BEFORE the move.
     uint64 hash_key; // Hash key of the board BEFORE the move was made.
+
+    UndoMove()
+    :move(0), castle_perm(15), en_pas_sq(NO_SQ), fifty(0), hash_key(0)
+    {}
 
     UndoMove(unsigned int m, unsigned int cp, unsigned int enpsq,
         unsigned int f, uint64 hk)
@@ -183,6 +188,8 @@ struct Board
     :side(WHITE), ply(0), his_ply(0), castle_perm(15), en_pas_sq(NO_SQ),
         fifty(0), hash_key(0ULL), history()
     {
+        history.reserve(50);
+
         for(int i = 0; i < 14; i++) chessboard[i] = 0ULL;
     }
 
@@ -191,6 +198,8 @@ struct Board
     :side(s), ply(p), his_ply(hp), castle_perm(cp), en_pas_sq(enpsq),
         fifty(f), hash_key(hk), history()
     {
+        history.reserve(50);
+
         for(int i = 0; i < 14; i++) chessboard[i] = 0ULL;
     }
 };
@@ -232,5 +241,8 @@ extern char conv_char(const Board& board, unsigned int index);
 // Returns a 'pretty' version of the board for standard output.
 
 extern std::string pretty_board(const Board& board);
+
+extern bool make_move(Board& board, unsigned int move); // Make a move.
+extern void undo_move(Board& board); // Unmake (undo) the previous move.
 
 #endif // BOARD_H
