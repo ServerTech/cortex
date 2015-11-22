@@ -32,7 +32,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
 void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board);
 void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
-bool is_sq_attacked(unsigned int index, unsigned int a_side,
+bool is_sq_attacked(unsigned int index, unsigned int chk_side,
     const Board& board);
 MoveList gen_moves(const Board& board);
 
@@ -887,6 +887,7 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
     unsigned int uint_1, uint_2, uint_3; // Temporary variables.
     uint64 u64_1; // Temporary variable.
+    bool not_in_check; // Temporary variable.
 
     // Generation
 
@@ -929,9 +930,11 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
     {
         if(gen_side == WHITE)
         {
+            not_in_check = !is_sq_attacked(e1, WHITE, board);
+
             if(board.castle_perm & WKCA) // White king-side castling
             {
-                if(!is_sq_attacked(e1, WHITE, board) && !is_sq_attacked(f1, WHITE, board))
+                if(not_in_check && !is_sq_attacked(f1, WHITE, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e1, g1, EMPTY, EMPTY,
                         MFLAGCA));
@@ -940,7 +943,7 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(board.castle_perm & WQCA) // White queen-side castling
             {
-                if(!is_sq_attacked(e1, WHITE, board) && !is_sq_attacked(d1, WHITE, board))
+                if(not_in_check && !is_sq_attacked(d1, WHITE, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e1, d1, EMPTY, EMPTY,
                         MFLAGCA));
@@ -949,9 +952,11 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
         }
         else
         {
+            not_in_check = !is_sq_attacked(e1, BLACK, board);
+
             if(board.castle_perm & BKCA) // Black king-side castling
             {
-                if(!is_sq_attacked(e8, WHITE, board) && !is_sq_attacked(f8, WHITE, board))
+                if(not_in_check && !is_sq_attacked(f8, BLACK, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e8, g8, EMPTY, EMPTY,
                         MFLAGCA));
@@ -960,7 +965,7 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(board.castle_perm & BQCA) // Black queen-side castling
             {
-                if(!is_sq_attacked(e8, WHITE, board) && !is_sq_attacked(d8, WHITE, board))
+                if(not_in_check && !is_sq_attacked(d8, BLACK, board))
                 {
                     push_castling_move(ml.list, GET_MOVE(e8, c8, EMPTY, EMPTY,
                         MFLAGCA));
@@ -992,7 +997,7 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
     @warning 'index' must be in LERF layout.
 */
 
-bool is_sq_attacked(unsigned int index, unsigned int a_side,
+bool is_sq_attacked(unsigned int index, unsigned int chk_side,
     const Board& board)
 {
     MoveList ml; // Temporary list.
@@ -1005,7 +1010,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     // Check for pawns
 
-    if(a_side == WHITE) // Check for black pawns
+    if(chk_side == WHITE) // Check for black pawns
     {
         if((u64_1 << 7 | u64_1 << 9) & board.chessboard[bP])
             return 1;
@@ -1018,7 +1023,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     // Check knights
 
-    gen_knight_moves(u64_1, a_side, ml, board);
+    gen_knight_moves(u64_1, chk_side, ml, board);
 
     uint_1 = ml.list.size();
 
@@ -1026,7 +1031,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
     {
         uint_2 = CAPTURED(ml.list.at(i).move);
 
-        if(a_side == WHITE) // Check if black knight
+        if(chk_side == WHITE) // Check if black knight
         {
             if(uint_2 == bN) return 1;
         }
@@ -1040,7 +1045,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     ml.list.clear();
 
-    gen_rook_moves(u64_1, a_side, ml, board);
+    gen_rook_moves(u64_1, chk_side, ml, board);
 
     uint_1 = ml.list.size();
 
@@ -1048,7 +1053,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
     {
         uint_2 = CAPTURED(ml.list.at(i).move);
 
-        if(a_side == WHITE) // Check if black rook/queen
+        if(chk_side == WHITE) // Check if black rook/queen
         {
             if(uint_2 == bR || uint_2 == bQ) return 1;
         }
@@ -1060,7 +1065,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     ml.list.clear();
 
-    gen_bishop_moves(u64_1, a_side, ml, board);
+    gen_bishop_moves(u64_1, chk_side, ml, board);
 
     uint_1 = ml.list.size();
 
@@ -1068,7 +1073,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
     {
         uint_2 = CAPTURED(ml.list.at(i).move);
 
-        if(a_side == WHITE) // Check if black bishop/queen
+        if(chk_side == WHITE) // Check if black bishop/queen
         {
             if(uint_2 == bB || uint_2 == bQ) return 1;
         }
