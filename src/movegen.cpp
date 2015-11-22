@@ -32,8 +32,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
 void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board);
 void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
-bool is_sq_attacked(unsigned int index, unsigned int chk_side,
-    const Board& board);
+bool is_sq_attacked(unsigned int index, bool chk_side, const Board& board);
 MoveList gen_moves(const Board& board);
 
 // Functions
@@ -980,37 +979,39 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
     This function efficiently generates captures moves and such, to check
     the given cell is currently under attack for the player denoted by
-    'a_side'. It works by imagining a rook and bishop on the cell, belonging
-    to 'a_side', and finding if this rook attacks any pieces. If the attacked
+    'gen_side'. It works by imagining a rook and bishop on the cell, belonging
+    to 'gen_side', and finding if this rook attacks any pieces. If the attacked
     pieces happen to be queens, rooks or bishops of the opposite site, the cell
-    is attacked. There are also checks to check for pawns and knights.
+    is attacked. There are also checks to check for pawns and knights. A lot of
+    effort was put into making this function efficient and fast.
 
     @param index is the integer index of the cell to check in LERF layout.
-    @param a_side is the side to be considered when checking whether the cell
+    @param gen_side is the side to be considered when checking whether the cell
            indexed by 'index' is attacked. It represents the defender.
     @param board is the board to check on.
 
     @return bool denoting whether the cell indexed by 'index' is under attack
-            by the opposite side (opposite to 'a_side').
+            by the opposite side (opposite to 'gen_side').
 
     @warning 'index' must be between (or equal to) 0 and 63.
     @warning 'index' must be in LERF layout.
 */
 
-bool is_sq_attacked(unsigned int index, unsigned int chk_side,
-    const Board& board)
+bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
 {
-    MoveList ml; // Temporary list.
-    ml.list.reserve(16);
+    const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
+    const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
 
-    unsigned int uint_1, uint_2; // Temporary variable.
-    uint64 u64_1; // Temporary variable.
+    const uint64 OCC = white_bb | black_bb; // Occupied bitboard.
+
+    unsigned int uint_1, uint_2; // Temporary variables.
+    uint64 u64_1, u64_2, u64_3; // Temporary variables.
 
     u64_1 = GET_BB(index);
 
     // Check for pawns
 
-    if(chk_side == WHITE) // Check for black pawns
+    if(gen_side == WHITE) // Check for black pawns
     {
         if((u64_1 << 7 | u64_1 << 9) & board.chessboard[bP])
             return 1;
@@ -1023,15 +1024,16 @@ bool is_sq_attacked(unsigned int index, unsigned int chk_side,
 
     // Check knights
 
-    gen_knight_moves(u64_1, chk_side, ml, board);
+    if(gen_side == WHITE) u64_2 = KNIGHT_LT[index] & black_bb;
+    else u64_2 = KNIGHT_LT[index] & white_bb;
 
-    uint_1 = ml.list.size();
+    uint_1 = CNT_BITS(u64_2);
 
     for(unsigned int i = 0; i < uint_1; i++)
     {
-        uint_2 = CAPTURED(ml.list.at(i).move);
+        uint_2 = determine_type(board, GET_BB(POP_BIT(u64_2)));
 
-        if(chk_side == WHITE) // Check if black knight
+        if(gen_side == WHITE) // Check if black knight
         {
             if(uint_2 == bN) return 1;
         }
@@ -1043,17 +1045,31 @@ bool is_sq_attacked(unsigned int index, unsigned int chk_side,
 
     // Check lines
 
-    ml.list.clear();
+    // North
 
-    gen_rook_moves(u64_1, chk_side, ml, board);
+    u64_2 = LINE_N_LT[index] & OCC;
+    u64_3 = u64_2;
 
-    uint_1 = ml.list.size();
+    u64_2 = (u64_2 << 8) | (u64_2 << 16) | (u64_2 << 24) |
+        (u64_2 << 32) | (u64_2 << 40) | (u64_2 << 48);
+    u64_2 &= LINE_N_LT[index];
+    u64_2 ^= LINE_N_LT[index];
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    if(u64_3)
     {
-        uint_2 = CAPTURED(ml.list.at(i).move);
+        uint_2 = CNT_BITS(u64_2);
+        uint_2--;
+    }
+    else uint_2 = CNT_BITS(u64_2);
 
-        if(chk_side == WHITE) // Check if black rook/queen
+    for(unsigned int i = 0; i < uint_2; i++) POP_BIT(u64_2);
+
+    if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+        (gen_side == BLACK && (u64_2 & white_bb))))
+    {
+        uint_2 = determine_type(board, u64_2);
+
+        if(gen_side == WHITE) // Check if black rook/queen
         {
             if(uint_2 == bR || uint_2 == bQ) return 1;
         }
@@ -1063,23 +1079,227 @@ bool is_sq_attacked(unsigned int index, unsigned int chk_side,
         }
     }
 
-    ml.list.clear();
+    // South
 
-    gen_bishop_moves(u64_1, chk_side, ml, board);
+    u64_2 = LINE_S_LT[index] & OCC;
+    u64_3 = u64_2;
 
-    uint_1 = ml.list.size();
+    u64_2 = (u64_2 >> 8) | (u64_2 >> 16) | (u64_2 >> 24) |
+        (u64_2 >> 32) | (u64_2 >> 40) | (u64_2 >> 48);
+    u64_2 &= LINE_S_LT[index];
+    u64_2 ^= LINE_S_LT[index];
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    if(u64_3)
     {
-        uint_2 = CAPTURED(ml.list.at(i).move);
+        u64_3 = GET_BB(POP_BIT(u64_2));
 
-        if(chk_side == WHITE) // Check if black bishop/queen
+        if((gen_side == WHITE && (u64_3 & black_bb)) ||
+            (gen_side == BLACK && (u64_3 & white_bb)))
+        {
+            uint_2 = determine_type(board, u64_3);
+
+            if(gen_side == WHITE) // Check if black rook/queen
+            {
+                if(uint_2 == bR || uint_2 == bQ) return 1;
+            }
+            else // Check if white rook/queen
+            {
+                if(uint_2 == wR || uint_2 == wQ) return 1;
+            }
+        }
+    }
+
+    // East
+
+    u64_2 = LINE_E_LT[index] & OCC;
+    u64_3 = u64_2;
+
+    u64_2 = (u64_2 << 1) | (u64_2 << 2) | (u64_2 << 3) |
+        (u64_2 << 4) | (u64_2 << 5) | (u64_2 << 6);
+    u64_2 &= LINE_E_LT[index];
+    u64_2 ^= LINE_E_LT[index];
+
+    if(u64_3)
+    {
+        uint_2 = CNT_BITS(u64_2);
+        uint_2--;
+    }
+    else uint_2 = CNT_BITS(u64_2);
+
+    for(unsigned int i = 0; i < uint_2; i++) POP_BIT(u64_2);
+
+    if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+        (gen_side == BLACK && (u64_2 & white_bb))))
+    {
+        uint_2 = determine_type(board, u64_2);
+
+        if(gen_side == WHITE) // Check if black rook/queen
+        {
+            if(uint_2 == bR || uint_2 == bQ) return 1;
+        }
+        else // Check if white rook/queen
+        {
+            if(uint_2 == wR || uint_2 == wQ) return 1;
+        }
+    }
+
+    // West
+
+    u64_2 = LINE_W_LT[index] & OCC;
+    u64_3 = u64_2;
+
+    u64_2 = (u64_2 >> 1) | (u64_2 >> 2) | (u64_2 >> 3) |
+        (u64_2 >> 4) | (u64_2 >> 5) | (u64_2 >> 6);
+    u64_2 &= LINE_W_LT[index];
+    u64_2 ^= LINE_W_LT[index];
+
+    if(u64_3)
+    {
+        u64_3 = GET_BB(POP_BIT(u64_2));
+
+        if((gen_side == WHITE && (u64_3 & black_bb)) ||
+            (gen_side == BLACK && (u64_3 & white_bb)))
+        {
+            uint_2 = determine_type(board, u64_3);
+
+            if(gen_side == WHITE) // Check if black rook/queen
+            {
+                if(uint_2 == bR || uint_2 == bQ) return 1;
+            }
+            else // Check if white rook/queen
+            {
+                if(uint_2 == wR || uint_2 == wQ) return 1;
+            }
+        }
+    }
+
+    // Check diagonals
+
+    // Northeast
+
+    u64_2 = DIAG_NE_LT[index] & OCC;
+    u64_3 = u64_2;
+
+    u64_2 = (u64_2 << 9) | (u64_2 << 18) | (u64_2 << 27) |
+        (u64_2 << 36) | (u64_2 << 45) | (u64_2 << 54);
+    u64_2 &= DIAG_NE_LT[index];
+    u64_2 ^= DIAG_NE_LT[index];
+
+    if(u64_3)
+    {
+        uint_2 = CNT_BITS(u64_2);
+        uint_2--;
+    }
+    else uint_2 = CNT_BITS(u64_2);
+
+    for(unsigned int i = 0; i < uint_2; i++) POP_BIT(u64_2);
+
+    if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+        (gen_side == BLACK && (u64_2 & white_bb))))
+    {
+        uint_2 = determine_type(board, u64_2);
+
+        if(gen_side == WHITE) // Check if black bishop/queen
         {
             if(uint_2 == bB || uint_2 == bQ) return 1;
         }
         else // Check if white bishop/queen
         {
             if(uint_2 == wB || uint_2 == wQ) return 1;
+        }
+    }
+
+    // Northwest
+
+    u64_2 = DIAG_NW_LT[index] & OCC;
+    u64_3 = u64_2;
+
+    u64_2 = (u64_2 << 7) | (u64_2 << 14) | (u64_2 << 21) |
+        (u64_2 << 28) | (u64_2 << 35) | (u64_2 << 42);
+    u64_2 &= DIAG_NW_LT[index];
+    u64_2 ^= DIAG_NW_LT[index];
+
+    if(u64_3)
+    {
+        uint_2 = CNT_BITS(u64_2);
+        uint_2--;
+    }
+    else uint_2 = CNT_BITS(u64_2);
+
+    for(unsigned int i = 0; i < uint_2; i++) POP_BIT(u64_2);
+
+    if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+        (gen_side == BLACK && (u64_2 & white_bb))))
+    {
+        uint_2 = determine_type(board, u64_2);
+
+        if(gen_side == WHITE) // Check if black bishop/queen
+        {
+            if(uint_2 == bB || uint_2 == bQ) return 1;
+        }
+        else // Check if white bishop/queen
+        {
+            if(uint_2 == wB || uint_2 == wQ) return 1;
+        }
+    }
+
+    // Southeast
+
+    u64_2 = DIAG_SE_LT[index] & OCC;
+    u64_3 = u64_2;
+
+    u64_2 = (u64_2 >> 7) | (u64_2 >> 14) | (u64_2 >> 21) |
+        (u64_2 >> 28) | (u64_2 >> 35) | (u64_2 >> 42);
+    u64_2 &= DIAG_SE_LT[index];
+    u64_2 ^= DIAG_SE_LT[index];
+
+    if(u64_3)
+    {
+        u64_3 = GET_BB(POP_BIT(u64_2));
+
+        if((gen_side == WHITE && (u64_3 & black_bb)) ||
+            (gen_side == BLACK && (u64_3 & white_bb)))
+        {
+            uint_2 = determine_type(board, u64_2);
+
+            if(gen_side == WHITE) // Check if black bishop/queen
+            {
+                if(uint_2 == bB || uint_2 == bQ) return 1;
+            }
+            else // Check if white bishop/queen
+            {
+                if(uint_2 == wB || uint_2 == wQ) return 1;
+            }
+        }
+    }
+
+    // Southwest
+
+    u64_2 = DIAG_SW_LT[index] & OCC;
+    u64_3 = u64_2;
+
+    u64_2 = (u64_2 >> 9) | (u64_2 >> 18) | (u64_2 >> 27) |
+        (u64_2 >> 36) | (u64_2 >> 45) | (u64_2 >> 54);
+    u64_2 &= DIAG_SW_LT[index];
+    u64_2 ^= DIAG_SW_LT[index];
+
+    if(u64_3)
+    {
+        u64_3 = GET_BB(POP_BIT(u64_2));
+
+        if((gen_side == WHITE && (u64_3 & black_bb)) ||
+            (gen_side == BLACK && (u64_3 & white_bb)))
+        {
+            uint_2 = determine_type(board, u64_2);
+
+            if(gen_side == WHITE) // Check if black bishop/queen
+            {
+                if(uint_2 == bB || uint_2 == bQ) return 1;
+            }
+            else // Check if white bishop/queen
+            {
+                if(uint_2 == wB || uint_2 == wQ) return 1;
+            }
         }
     }
 

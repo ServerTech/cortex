@@ -77,7 +77,7 @@ extern void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
 
 // Check if a cell is under attack.
 
-extern bool is_sq_attacked(unsigned int index, unsigned int chk_side,
+extern bool is_sq_attacked(unsigned int index, bool gen_side,
     const Board& board);
 
 extern MoveList gen_moves(const Board& board); // Generate all moves.

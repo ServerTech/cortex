@@ -19,7 +19,7 @@ int main()
 
     Board board;
 
-    if(!parse_fen(board, TEST_FEN_3)) std::cout << "Parse error." << std::endl;
+    if(!parse_fen(board, TEST_FEN_1)) std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl;
 
     std::cout << std::endl;
