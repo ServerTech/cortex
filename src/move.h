@@ -25,7 +25,7 @@ extern const unsigned int MFLAGEP; // En passant flag mask.
 extern const unsigned int MFLAGPS; // Pawn start flag mask.
 extern const unsigned int MFLAGCA; // Castling flag mask.
 
-// Functions
+// Structures
 
 /**
     @brief Holds a representation of a move.
