@@ -24,11 +24,14 @@ inline void push_quiet_move(std::vector<Move>& list, unsigned int move,
 inline void push_capture_move(std::vector<Move>& list, unsigned int move,
     const Board& board);
 inline void push_castling_move(std::vector<Move>& list, unsigned int move);
-void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board);
-void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board);
-void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board);
-void gen_pawn_moves(MoveList& ml, const Board& board);
-void gen_king_moves(MoveList& ml, const Board& board);
+void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
+void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
+void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
+void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board);
+void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
 bool is_sq_attacked(unsigned int index, unsigned int a_side,
     const Board& board);
 MoveList gen_moves(const Board& board);
@@ -152,6 +155,7 @@ inline void push_castling_move(std::vector<Move>& list, unsigned int move)
 
     @param u64_1 is the bitboard representing all pieces which are to be
            considered as rooks during generation.
+    @param gen_side is the side to generate moves for.
     @param ml is the move list structure to which the generated moves are
            to be pushed.
     @param board is the board on which the moves are to be generated.
@@ -159,7 +163,8 @@ inline void push_castling_move(std::vector<Move>& list, unsigned int move)
     @return void.
 */
 
-void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
+void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board)
 {
     const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
     const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
@@ -203,8 +208,8 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
 
         // Pop the capture move last.
 
-        if(u64_3 && ((board.side == WHITE && (u64_2 & black_bb)) ||
-            (board.side == BLACK && (u64_2 & white_bb))))
+        if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+            (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
             ml.attacked |= u64_3;
@@ -229,8 +234,8 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
             uint_3 = POP_BIT(u64_2);
             u64_3 = GET_BB(uint_3);
 
-            if((board.side == WHITE && (u64_3 & black_bb)) ||
-                (board.side == BLACK && (u64_3 & white_bb)))
+            if((gen_side == WHITE && (u64_3 & black_bb)) ||
+                (gen_side == BLACK && (u64_3 & white_bb)))
             {
                 ml.attacked |= u64_3;
                 push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
@@ -270,8 +275,8 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
 
         // Pop the capture move last.
 
-        if(u64_3 && ((board.side == WHITE && (u64_2 & black_bb)) ||
-            (board.side == BLACK && (u64_2 & white_bb))))
+        if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+            (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
             ml.attacked |= u64_3;
@@ -296,8 +301,8 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
             uint_3 = POP_BIT(u64_2);
             u64_3 = GET_BB(uint_3);
 
-            if((board.side == WHITE && (u64_3 & black_bb)) ||
-                (board.side == BLACK && (u64_3 & white_bb)))
+            if((gen_side == WHITE && (u64_3 & black_bb)) ||
+                (gen_side == BLACK && (u64_3 & white_bb)))
             {
                 ml.attacked |= u64_3;
                 push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
@@ -319,6 +324,7 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
            list vector for the given board state.
 
     @param u64_1 is the bitboard representing all knights.
+    @param gen_side is the side to generate moves for.
     @param ml is the move list structure to which the generated moves are
            to be pushed.
     @param board is the board on which the moves are to be generated.
@@ -326,7 +332,8 @@ void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board)
     @return void.
 */
 
-void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board)
+void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board)
 {
     const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
     const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
@@ -347,7 +354,7 @@ void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board)
 
         // Captures
 
-        if(board.side == WHITE) u64_2 = KNIGHT_LT[uint_1] & black_bb;
+        if(gen_side == WHITE) u64_2 = KNIGHT_LT[uint_1] & black_bb;
         else u64_2 = KNIGHT_LT[uint_1] & white_bb;
 
         uint_2 = CNT_BITS(u64_2);
@@ -383,6 +390,7 @@ void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board)
 
     @param u64_1 is the bitboard representing all pieces which are to be
            considered as bishops during generation.
+    @param gen_side is the side to generate moves for.
     @param ml is the move list structure to which the generated moves are
            to be pushed.
     @param board is the board on which the moves are to be generated.
@@ -390,7 +398,8 @@ void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board)
     @return void.
 */
 
-void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
+void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board)
 {
     const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
     const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
@@ -434,8 +443,8 @@ void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
 
         // Pop the capture move last.
 
-        if(u64_3 && ((board.side == WHITE && (u64_2 & black_bb)) ||
-            (board.side == BLACK && (u64_2 & white_bb))))
+        if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+            (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
             ml.attacked |= u64_3;
@@ -468,8 +477,8 @@ void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
 
         // Pop the capture move last.
 
-        if(u64_3 && ((board.side == WHITE && (u64_2 & black_bb)) ||
-            (board.side == BLACK && (u64_2 & white_bb))))
+        if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
+            (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
             ml.attacked |= u64_3;
@@ -494,8 +503,8 @@ void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
             uint_3 = POP_BIT(u64_2);
             u64_3 = GET_BB(uint_3);
 
-            if((board.side == WHITE && (u64_3 & black_bb)) ||
-                (board.side == BLACK && (u64_3 & white_bb)))
+            if((gen_side == WHITE && (u64_3 & black_bb)) ||
+                (gen_side == BLACK && (u64_3 & white_bb)))
             {
                 ml.attacked |= u64_3;
                 push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
@@ -527,8 +536,8 @@ void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
             uint_3 = POP_BIT(u64_2);
             u64_3 = GET_BB(uint_3);
 
-            if((board.side == WHITE && (u64_3 & black_bb)) ||
-                (board.side == BLACK && (u64_3 & white_bb)))
+            if((gen_side == WHITE && (u64_3 & black_bb)) ||
+                (gen_side == BLACK && (u64_3 & white_bb)))
             {
                 ml.attacked |= u64_3;
                 push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
@@ -549,6 +558,7 @@ void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
     @brief Generates and pushes all pseudo-legal pawn moves into the move
            list vector for the given board state.
 
+    @param gen_side is the side to generate moves for.
     @param ml is the move list structure to which the generated moves are
            to be pushed.
     @param board is the board on which the moves are to be generated.
@@ -558,7 +568,7 @@ void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board)
     @warning Pawns shouldn't be present on the promotion ranks (1 and 8).
 */
 
-void gen_pawn_moves(MoveList& ml, const Board& board)
+void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 {
     const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
     const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
@@ -570,7 +580,7 @@ void gen_pawn_moves(MoveList& ml, const Board& board)
     uint64 u64_1, u64_2, u64_3, u64_4; // Temporary variables.
     unsigned int bit_cnt; // Number of bits; temporary variable.
 
-    if(board.side == WHITE) // White Pawns
+    if(gen_side == WHITE) // White Pawns
     {
         u64_1 = board.chessboard[wP];
         bit_cnt = CNT_BITS(u64_1);
@@ -858,6 +868,7 @@ void gen_pawn_moves(MoveList& ml, const Board& board)
     @brief Generates and pushes all pseudo-legal king moves into the move
            list vector for the given board state.
 
+    @param gen_side is the side to generate moves for.
     @param ml is the move list structure to which the generated moves are
            to be pushed.
     @param board is the board on which the moves are to be generated.
@@ -867,7 +878,7 @@ void gen_pawn_moves(MoveList& ml, const Board& board)
     @warning There must be exactly ONE king (zero is also invalid).
 */
 
-void gen_king_moves(MoveList& ml, const Board& board)
+void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 {
     const uint64 white_bb = board.chessboard[ALL_WHITE]; // White bitboard.
     const uint64 black_bb = board.chessboard[ALL_BLACK]; // Black bitboard.
@@ -879,7 +890,7 @@ void gen_king_moves(MoveList& ml, const Board& board)
 
     // Generation
 
-    if(board.side == WHITE) u64_1 = board.chessboard[wK];
+    if(gen_side == WHITE) u64_1 = board.chessboard[wK];
     else u64_1 = board.chessboard[bK];
 
     assert((u64_1 != 0ULL) && ((u64_1 & (u64_1 - 1)) == 0ULL));
@@ -888,7 +899,7 @@ void gen_king_moves(MoveList& ml, const Board& board)
 
     // Captures
 
-    if(board.side == WHITE) u64_1 = KING_LT[uint_1] & black_bb;
+    if(gen_side == WHITE) u64_1 = KING_LT[uint_1] & black_bb;
     else u64_1 = KING_LT[uint_1] & white_bb;
 
     uint_2 = CNT_BITS(u64_1);
@@ -916,7 +927,7 @@ void gen_king_moves(MoveList& ml, const Board& board)
 
     if(board.castle_perm)
     {
-        if(board.side == WHITE)
+        if(gen_side == WHITE)
         {
             if(board.castle_perm & WKCA) // White king-side castling
             {
@@ -984,8 +995,6 @@ void gen_king_moves(MoveList& ml, const Board& board)
 bool is_sq_attacked(unsigned int index, unsigned int a_side,
     const Board& board)
 {
-    Board b_copy = board; // Temporary board to get around 'const' on 'board'.
-
     MoveList ml; // Temporary list.
 
     unsigned int uint_1, uint_2; // Temporary variable.
@@ -997,22 +1006,18 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     if(a_side == WHITE) // Check for black pawns
     {
-        if((u64_1 << 7 | u64_1 << 9) & b_copy.chessboard[bP])
+        if((u64_1 << 7 | u64_1 << 9) & board.chessboard[bP])
             return 1;
     }
     else // Check for white pawns
     {
-        if((u64_1 >> 7 | u64_1 >> 9) & b_copy.chessboard[wP])
+        if((u64_1 >> 7 | u64_1 >> 9) & board.chessboard[wP])
             return 1;
     }
 
-    // Change the side to play if required
-
-    b_copy.side = a_side;
-
     // Check knights
 
-    gen_knight_moves(u64_1, ml, b_copy);
+    gen_knight_moves(u64_1, a_side, ml, board);
 
     uint_1 = ml.list.size();
 
@@ -1034,7 +1039,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     ml.list.clear();
 
-    gen_rook_moves(u64_1, ml, b_copy);
+    gen_rook_moves(u64_1, a_side, ml, board);
 
     uint_1 = ml.list.size();
 
@@ -1054,7 +1059,7 @@ bool is_sq_attacked(unsigned int index, unsigned int a_side,
 
     ml.list.clear();
 
-    gen_bishop_moves(u64_1, ml, b_copy);
+    gen_bishop_moves(u64_1, a_side, ml, board);
 
     uint_1 = ml.list.size();
 
@@ -1095,45 +1100,45 @@ MoveList gen_moves(const Board& board)
     // Line moves
 
     if(board.side == WHITE) // White queens
-        gen_rook_moves(board.chessboard[wQ], ml, board);
+        gen_rook_moves(board.chessboard[wQ], WHITE, ml, board);
     else // Black queens
-        gen_rook_moves(board.chessboard[bQ], ml, board);
+        gen_rook_moves(board.chessboard[bQ], BLACK, ml, board);
 
     // Diagonal moves
 
     if(board.side == WHITE) // White queens
-        gen_bishop_moves(board.chessboard[wQ], ml, board);
+        gen_bishop_moves(board.chessboard[wQ], WHITE, ml, board);
     else // Black queens
-        gen_bishop_moves(board.chessboard[bQ], ml, board);
+        gen_bishop_moves(board.chessboard[bQ], BLACK, ml, board);
 
     // Rooks
 
     if(board.side == WHITE) // White rooks
-        gen_rook_moves(board.chessboard[wR], ml, board);
+        gen_rook_moves(board.chessboard[wR], WHITE, ml, board);
     else // Black rooks
-        gen_rook_moves(board.chessboard[bR], ml, board);
+        gen_rook_moves(board.chessboard[bR], BLACK, ml, board);
 
     // Knights
 
     if(board.side == WHITE) // White knights
-        gen_knight_moves(board.chessboard[wN], ml, board);
+        gen_knight_moves(board.chessboard[wN], WHITE, ml, board);
     else // Black knights
-        gen_knight_moves(board.chessboard[bN], ml, board);
+        gen_knight_moves(board.chessboard[bN], BLACK, ml, board);
 
     // Bishops
 
     if(board.side == WHITE) // White bishops
-        gen_bishop_moves(board.chessboard[wB], ml, board);
+        gen_bishop_moves(board.chessboard[wB], WHITE, ml, board);
     else // Black bishops
-        gen_bishop_moves(board.chessboard[bB], ml, board);
+        gen_bishop_moves(board.chessboard[bB], BLACK, ml, board);
 
     // Pawns
 
-    gen_pawn_moves(ml, board);
+    gen_pawn_moves(board.side, ml, board);
 
     // King
 
-    gen_king_moves(ml, board);
+    gen_king_moves(board.side, ml, board);
 
     return ml;
 }

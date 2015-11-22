@@ -54,23 +54,26 @@ extern std::string pretty_move_list(const std::vector<Move>& list);
 
 // Generate moves for rooks/line moves for queens.
 
-extern void gen_rook_moves(uint64 u64_1, MoveList& ml, const Board& board);
+extern void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Generate moves for knights.
 
-extern void gen_knight_moves(uint64 u64_1, MoveList& ml, const Board& board);
+extern void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Generate moves for bishops/diagonal moves for queens.
 
-extern void gen_bishop_moves(uint64 u64_1, MoveList& ml, const Board& board);
+extern void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Generate moves for pawns.
 
-extern void gen_pawn_moves(uint64 u64_1, MoveList& ml, const Board& board);
+extern void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board);
 
 // Generate moves for kings.
 
-extern void gen_king_moves(MoveList& ml, const Board& board);
+extern void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
 
 // Check if a cell is under attack.
 
