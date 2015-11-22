@@ -1,8 +1,8 @@
 /*
     Cortex - Self-learning Chess Engine
-    @filename hash.cpp
+    @filename hash.h
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 0.1.1
 
     @brief Handles zobrist hashing to generate hashes for game states.
 
@@ -12,6 +12,9 @@
     ******************** VERSION CONTROL ********************
     * 14/11/2015 File created.
     * 14/11/2015 0.1.0 Initial version.
+    * 22/11/2015 0.1.1 Added helper functions.
+        * Added HASH_PIECE(Board&, unsigned int, unsigned int),
+            HASH_SIDE(Board&), HASH_CA(Board&) and HASH_EP(Board&).
 */
 
 #include <random> // std::mt19937_64()
@@ -26,7 +29,7 @@ uint64 gen_hash(const Board& board);
 
 // Globals
 
-uint64 PIECE_KEYS[13][64]; // 64 keys for each piece, plus 64 for en passant.
+uint64 PIECE_KEYS[13][64]; // 64 keys for each piece; 64 for en passant.
 uint64 SIDE_KEY; // Hashed in if side to play is white.
 uint64 CASTLE_KEYS[16]; // 16 keys for castling permissions.
 
