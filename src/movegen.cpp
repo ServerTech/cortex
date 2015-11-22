@@ -63,7 +63,7 @@ std::string pretty_move_list(const std::vector<Move>& list)
         pretty_str << "    Score: " << list.at(i).score;
         pretty_str << "    Captured: ";
 
-        if(CAPTURED(list.at(i).move) != EMPTY)
+        if(IS_CAP(list.at(i).move))
         {
             cap++;
             pretty_str << CAPTURED(list.at(i).move);
@@ -72,10 +72,10 @@ std::string pretty_move_list(const std::vector<Move>& list)
 
         pretty_str << "    Promoted: ";
 
-        if(PROMOTED(list.at(i).move) != EMPTY)
+        if(IS_PROM(list.at(i).move))
         {
             prom++;
-            if(CAPTURED(list.at(i).move) != EMPTY) prom_cap++;
+            if(IS_CAP(list.at(i).move)) prom_cap++;
             pretty_str << PROMOTED(list.at(i).move);
         }
         else pretty_str << "-";
