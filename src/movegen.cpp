@@ -980,10 +980,10 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
     This function efficiently generates captures moves and such, to check
     the given cell is currently under attack for the player denoted by
     'gen_side'. It works by imagining a rook and bishop on the cell, belonging
-    to 'gen_side', and finding if this rook attacks any pieces. If the attacked
-    pieces happen to be queens, rooks or bishops of the opposite site, the cell
-    is attacked. There are also checks to check for pawns and knights. A lot of
-    effort was put into making this function efficient and fast.
+    to 'gen_side', and finding if this rook or bishop attacks any pieces.
+    If the attacked pieces happen to be queens, rooks or bishops of the
+    opposite side, the cell is under attack. There are also checks to check
+    for pawns and knights. A lot effort was put into making this function fast.
 
     @param index is the integer index of the cell to check in LERF layout.
     @param gen_side is the side to be considered when checking whether the cell
