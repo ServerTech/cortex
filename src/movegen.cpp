@@ -1323,7 +1323,6 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
 MoveList gen_moves(const Board& board)
 {
     MoveList ml; // Move list structure.
-    ml.list.reserve(50); // Reserve enough memory for fifty moves.
 
     // Queens
 

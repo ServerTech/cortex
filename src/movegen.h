@@ -43,7 +43,9 @@ struct MoveList
 
     MoveList()
     :list(), attacked(0ULL)
-    {};
+    {
+        list.reserve(50); // Reserve enough memory for fifty moves.
+    };
 };
 
 // External function definitions
