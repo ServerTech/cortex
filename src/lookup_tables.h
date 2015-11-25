@@ -16,6 +16,8 @@
 #ifndef LOOKUP_TABLES_H
 #define LOOKUP_TABLES_H
 
+#include "debug.h"
+
 #include "defs.h" // uint64
 
 // Globals

@@ -55,8 +55,10 @@
         * Supports initialisation with a FEN string.
         * Better support for disabling std::assert() with #define NDEBUG.
         * Now uses typedef unsigned long long instead of 'uint64_t'.
-    * 22/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
+    * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
 */
+
+#include "debug.h"
 
 #include <sstream> // std::stringstream
 #include <ctype.h> // isalpha() and isdigit()
@@ -568,10 +570,9 @@ bool make_move(Board& board, unsigned int move)
     unsigned int prom_type = PROMOTED(move);
     uint64 king_bb; // Used to check move legality.
 
-    bool side = board.side;
+    assert(cap_type != wK && cap_type != bK);
 
-    if(side == WHITE) king_bb = board.chessboard[wK];
-    else king_bb = board.chessboard[bK];
+    bool side = board.side;
 
     UndoMove undo_ms(move, board.castle_perm, board.en_pas_sq, board.fifty,
         board.hash_key); // Create the undo move structure.
@@ -615,15 +616,86 @@ bool make_move(Board& board, unsigned int move)
     }
     else if(IS_CAS(move)) // Move rook if castling
     {
+        HASH_CA(board); // Hash castling permissions out.
+
         switch(dst)
         {
-            case g1: move_piece_tk(board, wR, h1, f1); break;
-            case c1: move_piece_tk(board, wR, a1, d1); break;
-            case g8: move_piece_tk(board, bR, h8, f8); break;
-            case c8: move_piece_tk(board, bR, a8, d8); break;
+            case g1:
+            {
+                board.castle_perm &= 3;
+                move_piece_tk(board, wR, h1, f1);
+                break;
+            }
+            case c1:
+            {
+                board.castle_perm &= 3;
+                move_piece_tk(board, wR, a1, d1);
+                break;
+            }
+            case g8:
+            {
+                board.castle_perm &= 12;
+                move_piece_tk(board, bR, h8, f8);
+                break;
+            }
+            case c8:
+            {
+                board.castle_perm &= 12;
+                move_piece_tk(board, bR, a8, d8);
+                break;
+            }
             default: assert(false); break; // Something's wrong with castling.
         }
+
+        HASH_CA(board); // Hash castling permissions in.
     }
+
+    // Update castling permissions
+
+    HASH_CA(board); // Hash castling permissions out.
+
+    if(board.castle_perm)
+    {
+        switch(dep_type)
+        {
+            case wR: // White
+            {
+                if(dep == h1) board.castle_perm &= 7; // King-side
+                else if(dep == a1) board.castle_perm &= 11; // Queen-side
+            }
+            case bR: // Black
+            {
+                if(dep == h8) board.castle_perm &= 13; // King-side
+                else if(dep == a8) board.castle_perm &= 14; // Queen-side
+            }
+            case wK: // White
+            {
+                if(dep == e1) board.castle_perm &= 3;
+            }
+            case bK: // Black
+            {
+                if(dep == e8) board.castle_perm &= 12;
+            }
+            default: break; // Do nothing.
+        }
+
+        switch(cap_type)
+        {
+            case wR: // White
+            {
+                if(dst == h1) board.castle_perm &= 7; // King-side
+                else if(dst == a1) board.castle_perm &= 11; // Queen-side
+            }
+            case bR: // Black
+            {
+                if(dst == h8) board.castle_perm &= 13; // King-side
+                else if(dst == a8) board.castle_perm &= 14; // Queen-side
+            }
+            default: break; // Do nothing.
+        }
+    }
+
+    HASH_CA(board); // Hash castling permissions in.
 
     // Update fifty-move rule counter and clear captured piece, if any.
 
@@ -636,6 +708,7 @@ bool make_move(Board& board, unsigned int move)
         board.fifty = 0;
     }
 
+    assert(determine_type(board, GET_BB(dep)) < 12);
     move_piece_tu(board, dep, dst); // Move the piece.
 
     // Update as necessary if the move is a promotion.
@@ -655,7 +728,10 @@ bool make_move(Board& board, unsigned int move)
     board.side = !board.side; // Swap sides.
     HASH_SIDE(board); // Hash the side (swap).
 
-    assert(king_bb);
+    if(side == WHITE) king_bb = board.chessboard[wK];
+    else king_bb = board.chessboard[bK];
+
+    assert((king_bb != 0ULL) && ((king_bb & (king_bb - 1)) == 0ULL));
 
     if(is_sq_attacked(POP_BIT(king_bb), side, board)) // Check move legality.
     {
@@ -671,7 +747,6 @@ bool make_move(Board& board, unsigned int move)
     @brief Undo the previous move.
 
     This function unmakes the previous move that was made on the board.
-    If there is no move to undo, the function simply returns.
 
     @param board is the board to undo the move on.
 
@@ -680,6 +755,8 @@ bool make_move(Board& board, unsigned int move)
 
 void undo_move(Board& board)
 {
+    assert(board.history.size() != 0);
+
     UndoMove ms = board.history.back();
 
     unsigned int move = ms.move;
@@ -731,6 +808,7 @@ void undo_move(Board& board)
         }
     }
 
+    assert(determine_type(board, GET_BB(dst)) < 12);
     move_piece_tu(board, dst, dep); // Move the piece back.
 
     // Put the captured piece back where it was.
@@ -756,4 +834,6 @@ void undo_move(Board& board)
         else
             spawn_piece(board, bP, dep);
     }
+
+    board.history.pop_back(); // Pop the last move out.
 }

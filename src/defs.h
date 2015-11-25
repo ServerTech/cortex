@@ -17,6 +17,8 @@
 #ifndef DEFS_H
 #define DEFS_H
 
+#include "debug.h"
+
 #include <string> // std::string
 #include <assert.h> // std::assert()
 

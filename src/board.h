@@ -55,11 +55,13 @@
         * Supports initialisation with a FEN string.
         * Better support for disabling std::assert() with #define NDEBUG.
         * Now uses typedef unsigned long long instead of 'uint64_t'.
-    * 22/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
+    * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
 */
 
 #ifndef BOARD_H
 #define BOARD_H
+
+#include "debug.h"
 
 #include <string> // std::string
 #include <vector> // std::vector

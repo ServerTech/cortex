@@ -17,6 +17,8 @@
             HASH_SIDE(Board&), HASH_CA(Board&) and HASH_EP(Board&).
 */
 
+#include "debug.h"
+
 #include <random> // std::mt19937_64()
 
 #include "hash.h"

@@ -6,10 +6,15 @@
 
     @brief Generates moves given a board position.
 
+    Includes structures and functions that help generate and store
+    pseudo-legal moves for given game states.
+
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
-    * 22/11/2015 0.1.0 Initial version.
+    * 24/11/2015 0.1.0 Initial version.
 */
+
+#include "debug.h"
 
 #include <sstream> // std::stringstream
 
@@ -19,11 +24,11 @@
 // Prototypes
 
 std::string pretty_move_list(const std::vector<Move>& list);
-inline void push_quiet_move(std::vector<Move>& list, unsigned int move,
+inline void push_quiet_move(MoveList& ml, unsigned int move,
     const Board& board);
-inline void push_capture_move(std::vector<Move>& list, unsigned int move,
+inline void push_capture_move(MoveList& ml, unsigned int move,
     const Board& board);
-inline void push_castling_move(std::vector<Move>& list, unsigned int move);
+inline void push_castling_move(MoveList& ml, unsigned int move);
 void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
 void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
@@ -32,7 +37,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
 void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board);
 void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
-bool is_sq_attacked(unsigned int index, bool chk_side, const Board& board);
+bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board);
 MoveList gen_moves(const Board& board);
 
 // Functions
@@ -98,50 +103,57 @@ std::string pretty_move_list(const std::vector<Move>& list)
 /**
     @brief Pushes a quiet move to the move list vector.
 
-    @param list is the move list vector.
+    @param list is the move list structure.
     @param move is an integer value representing a move.
     @param board is the board the move is being made on.
 
     @return void.
 */
 
-inline void push_quiet_move(std::vector<Move>& list, unsigned int move,
+inline void push_quiet_move(MoveList& ml, unsigned int move,
     const Board& board)
 {
     Move move_push(move, 0);
-    list.push_back(move_push);
+    ml.list.push_back(move_push);
 }
 
 /**
     @brief Pushes a capture move to the move list vector.
 
-    @param list is the move list vector.
+    @param list is the move list structure.
     @param move is an integer value representing the move.
     @param board is the board the move is being made on.
 
     @return void.
 */
 
-inline void push_capture_move(std::vector<Move>& list, unsigned int move,
+inline void push_capture_move(MoveList& ml, unsigned int move,
     const Board& board)
 {
-    Move move_push(move, 0);
-    list.push_back(move_push);
+    unsigned int cap_type = CAPTURED(move);
+
+    if(cap_type == wK || cap_type == bK) return;
+    else
+    {
+        ml.attacked |= GET_BB(DST_CELL(move));
+        Move move_push(move, 0);
+        ml.list.push_back(move_push);
+    }
 }
 
 /**
     @brief Pushes a castling move to the move list vector.
 
-    @param list is the move list vector.
+    @param list is the move list structure.
     @param move is an integer value representing the move.
 
     @return void.
 */
 
-inline void push_castling_move(std::vector<Move>& list, unsigned int move)
+inline void push_castling_move(MoveList& ml, unsigned int move)
 {
     Move move_push(move, 0);
-    list.push_back(move_push);
+    ml.list.push_back(move_push);
 }
 
 /**
@@ -201,7 +213,7 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
 
@@ -211,8 +223,8 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
-            ml.attacked |= u64_3;
-            push_capture_move(ml.list, GET_MOVE(uint_1, POP_BIT(u64_2),
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            push_capture_move(ml, GET_MOVE(uint_1, POP_BIT(u64_2),
                 determine_type(board, u64_3), EMPTY, 0), board);
         }
 
@@ -236,8 +248,8 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             if((gen_side == WHITE && (u64_3 & black_bb)) ||
                 (gen_side == BLACK && (u64_3 & white_bb)))
             {
-                ml.attacked |= u64_3;
-                push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+                push_capture_move(ml, GET_MOVE(uint_1, uint_3,
                     determine_type(board, u64_3), EMPTY, 0), board);
             }
         }
@@ -245,7 +257,7 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
 
@@ -268,7 +280,7 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
 
@@ -278,8 +290,8 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
-            ml.attacked |= u64_3;
-            push_capture_move(ml.list, GET_MOVE(uint_1, POP_BIT(u64_2),
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            push_capture_move(ml, GET_MOVE(uint_1, POP_BIT(u64_2),
                 determine_type(board, u64_3), EMPTY, 0), board);
         }
 
@@ -303,8 +315,8 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             if((gen_side == WHITE && (u64_3 & black_bb)) ||
                 (gen_side == BLACK && (u64_3 & white_bb)))
             {
-                ml.attacked |= u64_3;
-                push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+                push_capture_move(ml, GET_MOVE(uint_1, uint_3,
                     determine_type(board, u64_3), EMPTY, 0), board);
             }
         }
@@ -312,7 +324,7 @@ void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
     }
@@ -340,7 +352,7 @@ void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const uint64 FREE = ~white_bb & ~black_bb; // Free bitboard.
 
     unsigned int uint_1, uint_2, uint_3; // Temporary variables.
-    uint64 u64_2; // Temporary variable.
+    uint64 u64_2, u64_3; // Temporary variable.
     unsigned int bit_cnt; // Number of bits; temporary variable.
 
     // Generation
@@ -361,10 +373,10 @@ void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
         for(unsigned int i = 0; i < uint_2; i++) // Push capture moves.
         {
             uint_3 = POP_BIT(u64_2);
-            u64_2 = GET_BB(uint_3);
-            ml.attacked |= u64_2;
-            push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
-                determine_type(board, u64_2), EMPTY, 0), board);
+            u64_3 = GET_BB(uint_3);
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            push_capture_move(ml, GET_MOVE(uint_1, uint_3,
+                determine_type(board, u64_3), EMPTY, 0), board);
         }
 
         u64_2 = KNIGHT_LT[uint_1] & FREE;
@@ -373,7 +385,7 @@ void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list, GET_MOVE(uint_1, POP_BIT(u64_2),
+            push_quiet_move(ml, GET_MOVE(uint_1, POP_BIT(u64_2),
                 EMPTY, EMPTY, 0), board);
         }
     }
@@ -436,7 +448,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
 
@@ -446,8 +458,8 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
-            ml.attacked |= u64_3;
-            push_capture_move(ml.list, GET_MOVE(uint_1, POP_BIT(u64_2),
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            push_capture_move(ml, GET_MOVE(uint_1, POP_BIT(u64_2),
                 determine_type(board, u64_3), EMPTY, 0), board);
         }
 
@@ -470,7 +482,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
 
@@ -480,8 +492,8 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             (gen_side == BLACK && (u64_2 & white_bb))))
         {
             u64_3 = u64_2;
-            ml.attacked |= u64_3;
-            push_capture_move(ml.list, GET_MOVE(uint_1, POP_BIT(u64_2),
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            push_capture_move(ml, GET_MOVE(uint_1, POP_BIT(u64_2),
                 determine_type(board, u64_3), EMPTY, 0), board);
         }
 
@@ -505,8 +517,8 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             if((gen_side == WHITE && (u64_3 & black_bb)) ||
                 (gen_side == BLACK && (u64_3 & white_bb)))
             {
-                ml.attacked |= u64_3;
-                push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+                push_capture_move(ml, GET_MOVE(uint_1, uint_3,
                     determine_type(board, u64_3), EMPTY, 0), board);
             }
         }
@@ -514,7 +526,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
 
@@ -538,8 +550,8 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
             if((gen_side == WHITE && (u64_3 & black_bb)) ||
                 (gen_side == BLACK && (u64_3 & white_bb)))
             {
-                ml.attacked |= u64_3;
-                push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+                push_capture_move(ml, GET_MOVE(uint_1, uint_3,
                     determine_type(board, u64_3), EMPTY, 0), board);
             }
         }
@@ -547,7 +559,7 @@ void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
 
         for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
         {
-            push_quiet_move(ml.list,
+            push_quiet_move(ml,
                 GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, 0), board);
         }
     }
@@ -590,8 +602,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
             uint_1 = POP_BIT(u64_1);
             u64_2 = GET_BB(uint_1);
-            u64_3 = 0ULL;
-            u64_3 |= (u64_2 << 8) & FREE;
+            u64_3 = (u64_2 << 8) & FREE;
 
             if(u64_3)
             {
@@ -600,18 +611,18 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 if(u64_3 & B_RANK[8]) // Check if the pawn reached rank 8.
                 {
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, wB, 0), board);
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, wR, 0), board);
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, wN, 0), board);
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, wQ, 0), board);
                 }
                 else
                 {
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, EMPTY, 0),
                         board);
                 }
@@ -620,7 +631,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 u64_2 = (u64_2 << 16) & B_RANK[4] & FREE;
 
-                if(u64_2 != 0ULL) push_quiet_move(ml.list,
+                if(u64_2 != 0ULL) push_quiet_move(ml,
                     GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, MFLAGPS),
                     board);
             }
@@ -644,32 +655,31 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(u64_3)
             {
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
                 uint_2 = determine_type(board, u64_3);
                 u64_4 = u64_3;
                 uint_3 = POP_BIT(u64_4);
 
-                ml.attacked |= u64_3;
-
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP),
                         board);
                 }
                 else if(u64_3 & B_RANK[8]) // Check if the pawn reached rank 8.
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wB, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wR, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wN, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wQ, 0), board);
                 }
                 else
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, EMPTY, 0), board);
                 }
             }
@@ -689,32 +699,31 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(u64_3)
             {
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
                 uint_2 = determine_type(board, u64_3);
                 u64_4 = u64_3;
                 uint_3 = POP_BIT(u64_4);
 
-                ml.attacked |= u64_3;
-
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP),
                         board);
                 }
                 else if(u64_3 & B_RANK[8]) // Check if the pawn reached rank 8.
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wB, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wR, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wN, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, wQ, 0), board);
                 }
                 else
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, EMPTY, 0), board);
                 }
             }
@@ -731,8 +740,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
             uint_1 = POP_BIT(u64_1);
             u64_2 = GET_BB(uint_1);
-            u64_3 = 0ULL;
-            u64_3 |= (u64_2 >> 8) & FREE;
+            u64_3 = (u64_2 >> 8) & FREE;
 
             if(u64_3 != 0ULL)
             {
@@ -741,18 +749,18 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 if(u64_3 & B_RANK[1]) // Check if the pawn reached rank 1.
                 {
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, bB, 0), board);
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, bR, 0), board);
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, bN, 0), board);
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, bQ, 0), board);
                 }
                 else
                 {
-                    push_quiet_move(ml.list,
+                    push_quiet_move(ml,
                         GET_MOVE(uint_1, uint_2, EMPTY, EMPTY, 0),
                         board);
                 }
@@ -761,7 +769,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 u64_2 = (u64_2 >> 16) & B_RANK[5] & FREE;
 
-                if(u64_2 != 0ULL) push_quiet_move(ml.list,
+                if(u64_2 != 0ULL) push_quiet_move(ml,
                     GET_MOVE(uint_1, POP_BIT(u64_2), EMPTY, EMPTY, MFLAGPS),
                     board);
             }
@@ -785,32 +793,31 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(u64_3)
             {
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
                 uint_2 = determine_type(board, u64_3);
                 u64_4 = u64_3;
                 uint_3 = POP_BIT(u64_4);
 
-                ml.attacked |= u64_3;
-
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP),
                         board);
                 }
                 else if(u64_3 & B_RANK[1]) // Check if the pawn reached rank 1.
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bB, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bR, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bN, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bQ, 0), board);
                 }
                 else
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, EMPTY, 0), board);
                 }
             }
@@ -830,32 +837,31 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
             if(u64_3)
             {
+                assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
                 uint_2 = determine_type(board, u64_3);
                 u64_4 = u64_3;
                 uint_3 = POP_BIT(u64_4);
 
-                ml.attacked |= u64_3;
-
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP),
                         board);
                 }
                 else if(u64_3 & B_RANK[1]) // Check if the pawn reached rank 1.
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bB, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bR, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bN, 0), board);
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, bQ, 0), board);
                 }
                 else
                 {
-                    push_capture_move(ml.list,
+                    push_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, uint_2, EMPTY, 0), board);
                 }
             }
@@ -885,7 +891,7 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
     const uint64 FREE = ~white_bb & ~black_bb; // Free bitboard.
 
     unsigned int uint_1, uint_2, uint_3; // Temporary variables.
-    uint64 u64_1; // Temporary variable.
+    uint64 u64_1, u64_2; // Temporary variable.
     bool not_in_check; // Temporary variable.
 
     // Generation
@@ -907,10 +913,10 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
     for(unsigned int i = 0; i < uint_2; i++) // Push capture moves.
     {
         uint_3 = POP_BIT(u64_1);
-        u64_1 = GET_BB(uint_3);
-        ml.attacked |= u64_1;
-        push_capture_move(ml.list, GET_MOVE(uint_1, uint_3,
-            determine_type(board, u64_1), EMPTY, 0), board);
+        u64_2 = GET_BB(uint_3);
+        assert((u64_2 != 0ULL) && ((u64_2 & (u64_2 - 1)) == 0ULL));
+        push_capture_move(ml, GET_MOVE(uint_1, uint_3,
+            determine_type(board, u64_2), EMPTY, 0), board);
     }
 
     u64_1 = KING_LT[uint_1] & FREE;
@@ -919,13 +925,14 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
 
     for(unsigned int i = 0; i < uint_2; i++) // Push quiet moves.
     {
-        push_quiet_move(ml.list, GET_MOVE(uint_1, POP_BIT(u64_1),
+        push_quiet_move(ml, GET_MOVE(uint_1, POP_BIT(u64_1),
             EMPTY, EMPTY, 0), board);
     }
 
     // Castling
 
-    if(board.castle_perm)
+    if(board.castle_perm &&
+        ((gen_side == WHITE && uint_1 == e1) || (gen_side == BLACK && uint_1 == e8)))
     {
         if(gen_side == WHITE)
         {
@@ -934,9 +941,10 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
             if(board.castle_perm & WKCA) // White king-side castling
             {
                 if(not_in_check && (determine_type(board, GET_BB(f1)) == EMPTY) &&
+                    (determine_type(board, GET_BB(g1)) == EMPTY) &&
                     !is_sq_attacked(f1, WHITE, board))
                 {
-                    push_castling_move(ml.list, GET_MOVE(e1, g1, EMPTY, EMPTY,
+                    push_castling_move(ml, GET_MOVE(e1, g1, EMPTY, EMPTY,
                         MFLAGCA));
                 }
             }
@@ -944,23 +952,26 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
             if(board.castle_perm & WQCA) // White queen-side castling
             {
                 if(not_in_check && (determine_type(board, GET_BB(d1)) == EMPTY) &&
+                    (determine_type(board, GET_BB(c1)) == EMPTY) &&
+                    (determine_type(board, GET_BB(b1)) == EMPTY) &&
                     !is_sq_attacked(d1, WHITE, board))
                 {
-                    push_castling_move(ml.list, GET_MOVE(e1, c1, EMPTY, EMPTY,
+                    push_castling_move(ml, GET_MOVE(e1, c1, EMPTY, EMPTY,
                         MFLAGCA));
                 }
             }
         }
         else
         {
-            not_in_check = !is_sq_attacked(e1, BLACK, board);
+            not_in_check = !is_sq_attacked(e8, BLACK, board);
 
             if(board.castle_perm & BKCA) // Black king-side castling
             {
                 if(not_in_check && (determine_type(board, GET_BB(f8)) == EMPTY) &&
+                    (determine_type(board, GET_BB(g8)) == EMPTY) &&
                     !is_sq_attacked(f8, BLACK, board))
                 {
-                    push_castling_move(ml.list, GET_MOVE(e8, g8, EMPTY, EMPTY,
+                    push_castling_move(ml, GET_MOVE(e8, g8, EMPTY, EMPTY,
                         MFLAGCA));
                 }
             }
@@ -968,9 +979,11 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board)
             if(board.castle_perm & BQCA) // Black queen-side castling
             {
                 if(not_in_check && (determine_type(board, GET_BB(d8)) == EMPTY) &&
+                    (determine_type(board, GET_BB(c8)) == EMPTY) &&
+                    (determine_type(board, GET_BB(b8)) == EMPTY) &&
                     !is_sq_attacked(d8, BLACK, board))
                 {
-                    push_castling_move(ml.list, GET_MOVE(e8, c8, EMPTY, EMPTY,
+                    push_castling_move(ml, GET_MOVE(e8, c8, EMPTY, EMPTY,
                         MFLAGCA));
                 }
             }
@@ -1015,14 +1028,16 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
 
     // Check for pawns
 
-    if(gen_side == WHITE) // Check for black pawns
+    if(gen_side == WHITE && (u64_1 & B_RANK[8]) == 0ULL) // Black pawns
     {
-        if((u64_1 << 7 | u64_1 << 9) & board.chessboard[bP])
+        if(((u64_1 << 7 | u64_1 << 9) & B_RANK[GET_RANK(index + 8)])
+            & board.chessboard[bP])
             return 1;
     }
-    else // Check for white pawns
+    else if((u64_1 & B_RANK[1]) == 0ULL) // White pawns
     {
-        if((u64_1 >> 7 | u64_1 >> 9) & board.chessboard[wP])
+        if(((u64_1 >> 7 | u64_1 >> 9) & B_RANK[GET_RANK(index - 8)])
+            & board.chessboard[wP])
             return 1;
     }
 
@@ -1035,7 +1050,10 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
 
     for(unsigned int i = 0; i < uint_1; i++)
     {
-        uint_2 = determine_type(board, GET_BB(POP_BIT(u64_2)));
+        u64_3 = GET_BB(POP_BIT(u64_2));
+
+        assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+        uint_2 = determine_type(board, u64_3);
 
         if(gen_side == WHITE) // Check if black knight
         {
@@ -1071,6 +1089,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
     if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
         (gen_side == BLACK && (u64_2 & white_bb))))
     {
+        assert((u64_2 != 0ULL) && ((u64_2 & (u64_2 - 1)) == 0ULL));
         uint_2 = determine_type(board, u64_2);
 
         if(gen_side == WHITE) // Check if black rook/queen
@@ -1100,6 +1119,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
         if((gen_side == WHITE && (u64_3 & black_bb)) ||
             (gen_side == BLACK && (u64_3 & white_bb)))
         {
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
             uint_2 = determine_type(board, u64_3);
 
             if(gen_side == WHITE) // Check if black rook/queen
@@ -1135,6 +1155,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
     if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
         (gen_side == BLACK && (u64_2 & white_bb))))
     {
+        assert((u64_2 != 0ULL) && ((u64_2 & (u64_2 - 1)) == 0ULL));
         uint_2 = determine_type(board, u64_2);
 
         if(gen_side == WHITE) // Check if black rook/queen
@@ -1164,6 +1185,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
         if((gen_side == WHITE && (u64_3 & black_bb)) ||
             (gen_side == BLACK && (u64_3 & white_bb)))
         {
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
             uint_2 = determine_type(board, u64_3);
 
             if(gen_side == WHITE) // Check if black rook/queen
@@ -1201,6 +1223,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
     if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
         (gen_side == BLACK && (u64_2 & white_bb))))
     {
+        assert((u64_2 != 0ULL) && ((u64_2 & (u64_2 - 1)) == 0ULL));
         uint_2 = determine_type(board, u64_2);
 
         if(gen_side == WHITE) // Check if black bishop/queen
@@ -1235,6 +1258,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
     if(u64_3 && ((gen_side == WHITE && (u64_2 & black_bb)) ||
         (gen_side == BLACK && (u64_2 & white_bb))))
     {
+        assert((u64_2 != 0ULL) && ((u64_2 & (u64_2 - 1)) == 0ULL));
         uint_2 = determine_type(board, u64_2);
 
         if(gen_side == WHITE) // Check if black bishop/queen
@@ -1264,7 +1288,8 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
         if((gen_side == WHITE && (u64_3 & black_bb)) ||
             (gen_side == BLACK && (u64_3 & white_bb)))
         {
-            uint_2 = determine_type(board, u64_2);
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            uint_2 = determine_type(board, u64_3);
 
             if(gen_side == WHITE) // Check if black bishop/queen
             {
@@ -1294,7 +1319,8 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
         if((gen_side == WHITE && (u64_3 & black_bb)) ||
             (gen_side == BLACK && (u64_3 & white_bb)))
         {
-            uint_2 = determine_type(board, u64_2);
+            assert((u64_3 != 0ULL) && ((u64_3 & (u64_3 - 1)) == 0ULL));
+            uint_2 = determine_type(board, u64_3);
 
             if(gen_side == WHITE) // Check if black bishop/queen
             {
@@ -1305,6 +1331,17 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
                 if(uint_2 == wB || uint_2 == wQ) return 1;
             }
         }
+    }
+
+    // Check neighbouring cells for kings
+
+    if(gen_side == WHITE) // Check for black king
+    {
+        if(KING_LT[index] & board.chessboard[bK]) return 1;
+    }
+    else // Check for white king
+    {
+        if(KING_LT[index] & board.chessboard[wK]) return 1;
     }
 
     return 0;

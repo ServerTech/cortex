@@ -6,13 +6,18 @@
 
     @brief Generates moves given a board position.
 
+    Includes structures and functions that help generate and store
+    pseudo-legal moves for given game states.
+
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
-    * 22/11/2015 0.1.0 Initial version.
+    * 24/11/2015 0.1.0 Initial version.
 */
 
 #ifndef MOVEGEN_H
 #define MOVEGEN_H
+
+#include "debug.h"
 
 #include <string> // std::string
 #include <vector> // std::vector

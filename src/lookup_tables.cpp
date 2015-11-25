@@ -13,6 +13,8 @@
     * 15/11/2015 0.1.2 Names are now more generic.
 */
 
+#include "debug.h"
+
 #include "lookup_tables.h"
 
 // Globals

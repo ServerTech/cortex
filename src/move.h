@@ -15,6 +15,8 @@
 #ifndef MOVE_H
 #define MOVE_H
 
+#include "debug.h"
+
 #include <string> // std::string and std::to_string()
 
 #include "defs.h"

@@ -18,6 +18,8 @@
                        to prevent collisions with the C's 'FILE'.
 */
 
+#include "debug.h"
+
 #include <fstream>
 #include <iomanip>
 

@@ -12,6 +12,8 @@
     * 15/11/2015 0.1.0 Initial version.
 */
 
+#include "debug.h"
+
 #include "move.h"
 
 // Globals

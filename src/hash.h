@@ -20,6 +20,8 @@
 #ifndef HASH_H
 #define HASH_H
 
+#include "debug.h"
+
 #include "defs.h"
 #include "board.h"
 
