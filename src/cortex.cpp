@@ -38,7 +38,7 @@ int main()
         std::cin >> usr_cmd;
         std::cout << std::endl;
 
-        if(usr_cmd == "perft" && depth = 0)
+        if(usr_cmd == "perft" && depth == 0)
         {
             std::cout << "Depth? ";
             std::cin >> depth;
