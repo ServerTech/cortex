@@ -38,17 +38,16 @@ int main()
         std::cin >> usr_cmd;
         std::cout << std::endl;
 
-        if(usr_cmd == "perft" && depth == 0)
-        {
-            std::cout << "Depth? ";
-            std::cin >> depth;
-            std::cout << std::endl;
-        }
-
         if(usr_cmd == "quit") break;
-        else if(usr_cmd == "undo") undo_move(board);
+        else if(usr_cmd == "undo")
+        {
+            undo_move(board);
+            std::cout << pretty_board(board) << std::endl << std::endl;
+        }
         else if(usr_cmd == "perft")
         {
+            std::cin >> depth;
+
             MoveList ml = gen_moves(board);
 
             std::clock_t begin = std::clock();
