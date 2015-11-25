@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.1
+    @version 0.4.2
 
     @brief Handles the board representation for the engine.
 
@@ -56,6 +56,7 @@
         * Better support for disabling std::assert() with #define NDEBUG.
         * Now uses typedef unsigned long long instead of 'uint64_t'.
     * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
+    * 25/11/2015 0.4.2 Added parse_move(Board&, std::string).
 */
 
 #ifndef BOARD_H
@@ -246,5 +247,9 @@ extern std::string pretty_board(const Board& board);
 
 extern bool make_move(Board& board, unsigned int move); // Make a move.
 extern void undo_move(Board& board); // Unmake (undo) the previous move.
+
+// Parse a move in pure algebraic notation.
+
+extern unsigned int parse_move(Board& board, std::string str_move);
 
 #endif // BOARD_H

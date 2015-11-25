@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @B_FILEname defs.h
     @author Shreyas Vinod
-    @version 0.1.2
+    @version 0.1.3
 
     @brief Holds definitions for code readability and speed improvements.
 
@@ -12,6 +12,7 @@
     * 08/11/2015 0.1.1 Added more values.
         * Added B_RANK[9] and B_FILE[9].
     * 13/11/2015 0.1.2 Added bit manipulation functions.
+    * 25/11/2015 0.1.3 Added NO_MOVE.
 */
 
 #ifndef DEFS_H
@@ -32,6 +33,8 @@ enum { WKCA = 8, WQCA = 4, BKCA = 2, BQCA = 1 };
 
 enum { wP, wR, wN, wB, wQ, wK, bP, bR, bN, bB, bQ, bK, ALL_WHITE, ALL_BLACK,
     EMPTY };
+
+enum { NO_MOVE };
 
 enum { NONE, FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H };
 

@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.cpp
     @author Shreyas Vinod
-    @version 0.4.1
+    @version 0.4.2
 
     @brief Handles the board representation for the engine.
 
@@ -56,6 +56,7 @@
         * Better support for disabling std::assert() with #define NDEBUG.
         * Now uses typedef unsigned long long instead of 'uint64_t'.
     * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
+    * 25/11/2015 0.4.2 Added parse_move(Board&, std::string).
 */
 
 #include "debug.h"
@@ -88,6 +89,7 @@ inline void move_piece_cap(Board& board, unsigned int piece_type,
     unsigned int cap_type, unsigned int dep_cell, unsigned int dst_cell);
 bool make_move(Board& board, unsigned int move);
 void undo_move(Board& board);
+unsigned int parse_move(Board& board, std::string str_move);
 
 // Functions
 
@@ -563,6 +565,8 @@ inline void move_piece_tk(Board& board, unsigned int piece_type,
 
 bool make_move(Board& board, unsigned int move)
 {
+    assert(move != NO_MOVE);
+
     unsigned int dep = DEP_CELL(move);
     unsigned int dst = DST_CELL(move);
     unsigned int dep_type = determine_type(board, GET_BB(dep));
@@ -755,7 +759,7 @@ bool make_move(Board& board, unsigned int move)
 
 void undo_move(Board& board)
 {
-    assert(board.history.size() != 0);
+    assert(board.history.size() > 0);
 
     UndoMove ms = board.history.back();
 
@@ -836,4 +840,121 @@ void undo_move(Board& board)
     }
 
     board.history.pop_back(); // Pop the last move out.
+}
+
+/**
+    @brief Converts a string representation of a move in pure algebraic
+           notation into the standard convention for representing moves
+           in the engine.
+
+    @param board is the board the move is being made on.
+    @param str_move is the string representation of the move in pure
+           algebraic notation.
+
+    @return unsigned int value representing the move in standard convention.
+
+    @warning Returns 'NO_MOVE' (0) on failure to parse, or if the move does
+             not exist or is not legal.
+*/
+
+unsigned int parse_move(Board& board, std::string str_move)
+{
+    assert(str_move.length() == 4 || str_move.length() == 5);
+
+    unsigned int dep_cell = 0, dst_cell = 0; // Indices of cells.
+    unsigned int prom_type = EMPTY; // Type of promoted piece, if any.
+    unsigned int move = NO_MOVE; // The move itself.
+
+    unsigned int list_size, list_move; // Temporary variables.
+    char c; // Temporary character.
+
+    MoveList ml = gen_moves(board);
+
+    c = str_move[0]; // Departure file
+
+    if(c >= 'a' && c <= 'h') dep_cell += c - 'a';
+    else return 0; // Parse error.
+
+    c = str_move[1]; // Departure rank
+
+    if(c >= '1' && c <= '8') dep_cell += (c - '1') * 8;
+    else return 0; // Parse error.
+
+    c = str_move[2]; // Destination file
+
+    if(c >= 'a' && c <= 'h') dst_cell += c - 'a';
+    else return 0; // Parse error.
+
+    c = str_move[3]; // Destination rank
+
+    if(c >= '1' && c <= '8') dst_cell += (c - '1') * 8;
+
+    c = str_move[4]; // Type of promoted piece
+
+    if(c)
+    {
+        switch(c)
+        {
+            case 'q':
+            {
+                if(board.side == WHITE) prom_type = wQ;
+                else prom_type = bQ;
+                break;
+            }
+            case 'n':
+            {
+                if(board.side == WHITE) prom_type = wN;
+                else prom_type = bN;
+                break;
+            }
+            case 'r':
+            {
+                if(board.side == WHITE) prom_type = wR;
+                else prom_type = bR;
+                break;
+            }
+            case 'b':
+            {
+                if(board.side == WHITE) prom_type = wB;
+                else prom_type = bB;
+                break;
+            }
+            default: return 0; // Parse error.
+        }
+    }
+
+    list_size = ml.list.size();
+
+    for(unsigned int i = 0; i < list_size; i++) // Compare with every move.
+    {
+        list_move = ml.list.at(i).move;
+
+        if(DEP_CELL(list_move) == dep_cell && DST_CELL(list_move) == dst_cell)
+        {
+            if(IS_PROM(list_move))
+            {
+                if(PROMOTED(list_move) == prom_type)
+                {
+                    move = list_move;
+                    break;
+                }
+            }
+            else
+            {
+                move = list_move;
+                break;
+            }
+        }
+    }
+
+    if(move) // Check if legal.
+    {
+        if(make_move(board, move))
+        {
+            undo_move(board);
+            return move;
+        }
+    }
+
+    return NO_MOVE;
 }
