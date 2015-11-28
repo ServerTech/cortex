@@ -90,6 +90,8 @@ inline void move_piece_cap(Board& board, unsigned int piece_type,
 bool make_move(Board& board, unsigned int move);
 void undo_move(Board& board);
 unsigned int parse_move(Board& board, std::string str_move);
+inline bool move_exists(Board& board, unsigned int move);
+unsigned int probe_pv_line(Board& board, unsigned int depth);
 
 // Functions
 
@@ -252,9 +254,7 @@ bool parse_fen(Board& board, const std::string fen)
         board.en_pas_sq = GET_INDEX(file, rank);
     }
 
-    i++;
-    if(fen[i] != ' ') return 0; // Parse error.
-    i++;
+    i += 2;
 
     // Fifty-move rule counter and move counter ignored for now.
 
@@ -744,6 +744,8 @@ bool make_move(Board& board, unsigned int move)
         return 0; // The move was illegal and hence not made.
     }
 
+    assert(board.his_ply == board.history.size());
+
     return 1; // The move was legal and has been correctly made.
 }
 
@@ -840,6 +842,8 @@ void undo_move(Board& board)
     }
 
     board.history.pop_back(); // Pop the last move out.
+
+    assert(board.his_ply == board.history.size());
 }
 
 /**
@@ -859,7 +863,8 @@ void undo_move(Board& board)
 
 unsigned int parse_move(Board& board, std::string str_move)
 {
-    assert(str_move.length() == 4 || str_move.length() == 5);
+    if(str_move.length() < 4 || str_move.length() > 5)
+        return 0; // Parse error.
 
     unsigned int dep_cell = 0, dst_cell = 0; // Indices of cells.
     unsigned int prom_type = EMPTY; // Type of promoted piece, if any.
@@ -957,4 +962,75 @@ unsigned int parse_move(Board& board, std::string str_move)
     }
 
     return NO_MOVE;
+}
+
+/**
+    @brief Checks if the given move actually exists on the board.
+
+    @param board is the board to check on.
+    @param move is the integer representation of the move to check in
+           standard convention.
+
+    @return bool denoting whether the move exists on the board represented
+            by 'board'.
+*/
+
+inline bool move_exists(Board& board, unsigned int move)
+{
+    unsigned int list_move, list_size;
+
+    MoveList ml = gen_moves(board);
+
+    list_size = ml.list.size();
+
+    for(unsigned int i = 0; i < list_size; i++) // Compare with every move.
+    {
+        list_move = ml.list.at(i).move;
+
+        if(!make_move(board, list_move)) continue;
+        undo_move(board);
+        if(move == list_move) return 1;
+    }
+
+    return 0;
+}
+
+/**
+    @brief Retrieves a PV line from the table.
+
+    @param board is the board on which to probe and fill the PV array on.
+    @param depth is the depth to which to probe the PV line to.
+
+    @return unsigned int value representing the depth to which the PV line
+            was found (or in other words, the number of moves found).
+*/
+
+unsigned int probe_pv_line(Board& board, unsigned int depth)
+{
+    assert(board.ply == 0);
+    assert(depth < MAX_DEPTH);
+
+    unsigned int move = probe_pv_table(board.pv_table, board.hash_key);
+    unsigned int count = 0;
+
+    // Probe the table.
+
+    while(move != NO_MOVE && count < depth)
+    {
+        if(move_exists(board, move))
+        {
+            make_move(board, move);
+            board.pv_array[count] = move;
+            count++;
+        }
+        else break;
+
+        move = probe_pv_table(board.pv_table, board.hash_key);
+    }
+
+    // Reset the board to the original position.
+
+    while(board.ply > 0) undo_move(board);
+
+    return count;
 }

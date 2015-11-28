@@ -273,6 +273,8 @@ inline std::string COORD(unsigned int index)
 
 inline std::string COORD_MOVE(unsigned int move)
 {
+    if(move == NO_MOVE) return "NO_MOVE";
+
     std::string alg_coord;
     int promoted = PROMOTED(move);
 

@@ -5,7 +5,9 @@
 #include "board.h"
 #include "move.h"
 #include "movegen.h"
+#include "search.h"
 #include "hash.h"
+#include "hash_table.h"
 #include "perft.h"
 
 #define FEN_START "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -19,14 +21,16 @@
 #define TEST_FEN_8 "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 1"
 #define TEST_FEN_9 "rnb1k1nr/pppp1ppp/8/1q2p3/4P1b1/5P2/PPPPQ1PP/RNB1KBNR w - - 0 1"
 #define TEST_FEN_10 "r1B1k2r/p3p1P1/5n1p/2n5/1p6/7b/Q4PPP/RNB1KBNR w - - 0 1"
+#define WAC1 "2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - -"
 
 int main()
 {
     init_hash();
 
     Board board;
+    init_pv_table(board.pv_table, 2097152); // Initialise PV hash table to 2 MB.
 
-    if(!parse_fen(board, TEST_FEN_10)) std::cout << "Parse error." << std::endl;
+    if(!parse_fen(board, WAC1)) std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
     std::string usr_cmd;
@@ -41,14 +45,32 @@ int main()
         if(usr_cmd == "quit") break;
         else if(usr_cmd == "undo")
         {
-            undo_move(board);
-            std::cout << pretty_board(board) << std::endl << std::endl;
+            if(board.history.size() > 0)
+            {
+                undo_move(board);
+                board.ply = 0;
+                std::cout << pretty_board(board) << std::endl << std::endl;
+            }
+            else std::cout << "ERROR: No move to undo." << std::endl << std::endl;
+        }
+        else if(usr_cmd == "search")
+        {
+            std::cin >> depth;
+
+            SearchInfo search_info;
+            search_info.depth = depth;
+
+            search(board, search_info);
+            std::cout << std::endl;
+        }
+        else if(usr_cmd == "pseudo")
+        {
+            MoveList ml = gen_moves(board);
+            std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
         }
         else if(usr_cmd == "perft")
         {
             std::cin >> depth;
-
-            MoveList ml = gen_moves(board);
 
             std::clock_t begin = std::clock();
 
@@ -74,4 +96,3 @@ int main()
         }
     }
 }
-

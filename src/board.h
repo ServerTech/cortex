@@ -67,6 +67,7 @@
 #include <string> // std::string
 #include <vector> // std::vector
 
+#include "hash_table.h"
 #include "defs.h"
 
 // Structures
@@ -132,6 +133,11 @@ struct UndoMove
     @var chessboard is 14 element array of 64-bit unsigned integers, each
          storing the state of the board in bitboard representation, indexed
          in standard convention.
+    @var pv_table is the Principal Variation hash table.
+    @var pv_array stores the current best PV line obtained from the PV hash
+         table.
+    @var search_history is an array used for the history heuristic.
+    @var search_killers is an array used for the killer heuristic.
 
     @warning Do NOT have more than king for each side. Although this is not
              checked, the consequence of having multiple kings is undefined for
@@ -145,6 +151,8 @@ struct UndoMove
              'NO_SQ' (64) when there is no en passant square.
     @warning 'ply' is for use by search only, while 'his_ply' stores the
              current ply value of the actual game.
+    @warning Since the killer heuristic array is indexed by depth, it assumes
+             the maximum search depth to be 'MAX_DEPTH'.
 */
 
 /*
@@ -187,23 +195,59 @@ struct Board
 
     uint64 chessboard[14]; // Board representation.
 
+    PVTable pv_table; // Principal Variation (PV) hash table.
+    unsigned int pv_array[MAX_DEPTH]; // PV line array.
+
+    unsigned int search_history[13][64]; // Array for history heuristics.
+    unsigned int search_killers[2][MAX_DEPTH]; // Array for killer heuristics.
+
     Board()
     :side(WHITE), ply(0), his_ply(0), castle_perm(15), en_pas_sq(NO_SQ),
-        fifty(0), hash_key(0ULL), history()
+        fifty(0), hash_key(0ULL), history(), pv_table()
     {
-        history.reserve(50);
+        history.reserve(64);
 
-        for(int i = 0; i < 14; i++) chessboard[i] = 0ULL;
+        for(unsigned int i = 0; i < 14; i++) chessboard[i] = 0ULL;
+
+        for(unsigned int i = 0; i < 13; i++)
+        {
+            for(unsigned int j = 0; j < 64; j++)
+                search_history[i][j] = 0;
+        }
+
+        for(unsigned int i = 0; i < 2; i++)
+        {
+            for(unsigned int j = 0; j < MAX_DEPTH; j++)
+                search_killers[i][j] = 0;
+        }
+
+        for(unsigned int i = 0; i < MAX_DEPTH; i++)
+            pv_array[i] = 0;
     }
 
     Board(bool s, unsigned int p, unsigned int hp, unsigned int cp,
         unsigned int enpsq, unsigned int f, uint64 hk)
     :side(s), ply(p), his_ply(hp), castle_perm(cp), en_pas_sq(enpsq),
-        fifty(f), hash_key(hk), history()
+        fifty(f), hash_key(hk), history(), pv_table(), pv_array()
     {
-        history.reserve(50);
+        history.reserve(64);
 
-        for(int i = 0; i < 14; i++) chessboard[i] = 0ULL;
+        for(unsigned int i = 0; i < 14; i++) chessboard[i] = 0ULL;
+
+        for(unsigned int i = 0; i < 13; i++)
+        {
+            for(unsigned int j = 0; j < 64; j++)
+                search_history[i][j] = 0;
+        }
+
+        for(unsigned int i = 0; i < 2; i++)
+        {
+            for(unsigned int j = 0; j < MAX_DEPTH; j++)
+                search_killers[i][j] = 0;
+        }
+
+        for(unsigned int i = 0; i < MAX_DEPTH; i++)
+            pv_array[i] = 0;
     }
 };
 
@@ -251,5 +295,9 @@ extern void undo_move(Board& board); // Unmake (undo) the previous move.
 // Parse a move in pure algebraic notation.
 
 extern unsigned int parse_move(Board& board, std::string str_move);
+
+// Probe and fill the PV line array.
+
+extern unsigned int probe_pv_line(Board& board, unsigned int depth);
 
 #endif // BOARD_H

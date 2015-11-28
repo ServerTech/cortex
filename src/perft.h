@@ -16,8 +16,8 @@
 
 #include "debug.h"
 
-#include "defs.h"
 #include "board.h"
+#include "defs.h"
 
 // External function definitions
 

@@ -13,6 +13,7 @@
         * Added B_RANK[9] and B_FILE[9].
     * 13/11/2015 0.1.2 Added bit manipulation functions.
     * 25/11/2015 0.1.3 Added NO_MOVE.
+    * 28/11/2015 0.1.4 Added MAX_DEPTH.
 */
 
 #ifndef DEFS_H
@@ -26,6 +27,8 @@
 typedef unsigned long long uint64;
 
 // Globals
+
+#define MAX_DEPTH 64
 
 enum { BLACK, WHITE };
 
