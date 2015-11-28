@@ -16,6 +16,7 @@
 */
 
 #include <iostream> // std::cout
+#include <algorithm> // std::sort()
 
 #include "search.h"
 #include "move.h" // COORD_MOVE()
@@ -25,7 +26,7 @@
 
 // Globals
 
-const int INFINITY = 50000;
+const int INFINITY_C = 50000;
 
 // Function Prototypes
 
@@ -74,7 +75,7 @@ inline void clear_for_search(Board& board, SearchInfo& search_info)
 {
     // Clear the history heuristic array.
 
-    for(unsigned int i = 0; i < 13; i++)
+    for(unsigned int i = 0; i < 12; i++)
     {
         for(unsigned int j = 0; j < 64; j++)
             board.search_history[i][j] = 0;
@@ -135,7 +136,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     }
 
     unsigned int best_move = NO_MOVE;
-    int score = -INFINITY;
+    int score = -INFINITY_C;
 
     int old_alpha = alpha;
     unsigned int legal = 0; // Number of legal moves found.
@@ -143,6 +144,9 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     unsigned int list_move, list_size;
 
     MoveList ml = gen_moves(board);
+
+    std::sort(ml.list.begin(), ml.list.end(),
+        [](const Move& lhs, const Move& rhs){ return lhs.score > rhs.score; });
 
     list_size = ml.list.size();
 
@@ -205,7 +209,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 void search(Board& board, SearchInfo& search_info)
 {
     unsigned int best_move = NO_MOVE;
-    int best_score = -INFINITY;
+    int best_score = -INFINITY_C;
 
     unsigned int pv_moves; // Number of PV moves found.
 
@@ -214,7 +218,7 @@ void search(Board& board, SearchInfo& search_info)
     for(unsigned int current_depth = 1; current_depth <= search_info.depth;
         current_depth++) // Iterative deepening!
     {
-        best_score = alpha_beta(-INFINITY, INFINITY, current_depth,
+        best_score = alpha_beta(-INFINITY_C, INFINITY_C, current_depth,
             board, search_info, 1); // Call Alpha-Beta and get the best score.
 
         // *** Check if out of time! ***

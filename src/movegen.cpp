@@ -21,12 +21,21 @@
 #include "movegen.h"
 #include "lookup_tables.h"
 
+// Globals
+
+const int VICTIM_SCORE[12] = {100, 400, 300, 200, 500, 600,
+    100, 400, 300, 200, 500, 600};
+unsigned int MVV_LVA_ST[12][12]; // MVV-LVA scores lookup table.
+
 // Prototypes
 
+void init_mvv_lva();
 std::string pretty_move_list(const std::vector<Move>& list);
 inline void push_quiet_move(MoveList& ml, unsigned int move,
     const Board& board);
 inline void push_capture_move(MoveList& ml, unsigned int move,
+    const Board& board);
+inline void push_enp_capture_move(MoveList& ml, unsigned int move,
     const Board& board);
 inline void push_castling_move(MoveList& ml, unsigned int move);
 void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
@@ -41,6 +50,24 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board);
 MoveList gen_moves(const Board& board);
 
 // Functions
+
+/**
+    @brief Initialises the MVV-LVA scores lookup table.
+
+    @return void.
+*/
+
+void init_mvv_lva()
+{
+    for(unsigned int attacker = wP; attacker <= bK; attacker++)
+    {
+        for(unsigned int victim = wP; victim <= bK; victim++)
+        {
+            MVV_LVA_ST[victim][attacker] = VICTIM_SCORE[victim] + 6 -
+                (VICTIM_SCORE[attacker] / 100);
+        }
+    }
+}
 
 /**
     @brief Converts a move list vector into a 'pretty' string.
@@ -136,9 +163,30 @@ inline void push_capture_move(MoveList& ml, unsigned int move,
     else
     {
         ml.attacked |= GET_BB(DST_CELL(move));
-        Move move_push(move, 0);
+        assert((GET_BB(DEP_CELL(move)) != 0ULL) &&
+            ((GET_BB(DEP_CELL(move)) & (GET_BB(DEP_CELL(move)) - 1)) == 0ULL));
+        Move move_push(move, MVV_LVA_ST[cap_type][determine_type(board,
+            GET_BB(DEP_CELL(move)))]);
         ml.list.push_back(move_push);
     }
+}
+
+/**
+    @brief Pushes an en passant capture move to the move list vector.
+
+    @param list is the move list structure.
+    @param move is an integer value representing the move.
+    @param board is the board the move is being made on.
+
+    @return void.
+*/
+
+inline void push_enp_capture_move(MoveList& ml, unsigned int move,
+    const Board& board)
+{
+    ml.attacked |= GET_BB(DST_CELL(move));
+    Move move_push(move, 105);
+    ml.list.push_back(move_push);
 }
 
 /**
@@ -662,7 +710,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml,
+                    push_enp_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP),
                         board);
                 }
@@ -706,7 +754,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml,
+                    push_enp_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP),
                         board);
                 }
@@ -800,7 +848,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml,
+                    push_enp_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP),
                         board);
                 }
@@ -844,7 +892,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
 
                 if(uint_3 == board.en_pas_sq)
                 {
-                    push_capture_move(ml,
+                    push_enp_capture_move(ml,
                         GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP),
                         board);
                 }

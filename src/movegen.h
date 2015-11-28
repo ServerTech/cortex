@@ -55,6 +55,8 @@ struct MoveList
 
 // External function definitions
 
+extern void init_mvv_lva(); // Initialise MVV-LVA scores table.
+
 // Returns a 'pretty' version of the move list for standard output.
 
 extern std::string pretty_move_list(const std::vector<Move>& list);

@@ -47,7 +47,6 @@ uint64 CASTLE_KEYS[16]; // 16 keys for castling permissions.
 
     @warning std::mt19937_64() or the 64-bit equivalent of the Mersenne Twister
              Engine requires the C++11 standard.
-    @warning Do not call twice; your hashes will become useless, won't they?
 */
 
 void init_hash()

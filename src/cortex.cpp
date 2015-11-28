@@ -22,15 +22,17 @@
 #define TEST_FEN_9 "rnb1k1nr/pppp1ppp/8/1q2p3/4P1b1/5P2/PPPPQ1PP/RNB1KBNR w - - 0 1"
 #define TEST_FEN_10 "r1B1k2r/p3p1P1/5n1p/2n5/1p6/7b/Q4PPP/RNB1KBNR w - - 0 1"
 #define WAC1 "2rr3k/pp3pp1/1nnqbN1p/3pN3/2pP4/2P3Q1/PPB4P/R4RK1 w - -"
+#define WAC2 "r1b1k2r/ppppnppp/2n2q2/2b5/3NP3/2P1B3/PP3PPP/RN1QKB1R w KQkq - 0 1"
 
 int main()
 {
     init_hash();
+    init_mvv_lva();
 
     Board board;
     init_pv_table(board.pv_table, 2097152); // Initialise PV hash table to 2 MB.
 
-    if(!parse_fen(board, WAC1)) std::cout << "Parse error." << std::endl;
+    if(!parse_fen(board, FEN_START)) std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
     std::string usr_cmd;

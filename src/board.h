@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.2
+    @version 0.4.3
 
     @brief Handles the board representation for the engine.
 
@@ -57,6 +57,7 @@
         * Now uses typedef unsigned long long instead of 'uint64_t'.
     * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
     * 25/11/2015 0.4.2 Added parse_move(Board&, std::string).
+    * 28/11/2015 0.4.3 Added PV capabilities and history/killer heuristics.
 */
 
 #ifndef BOARD_H
@@ -198,7 +199,7 @@ struct Board
     PVTable pv_table; // Principal Variation (PV) hash table.
     unsigned int pv_array[MAX_DEPTH]; // PV line array.
 
-    unsigned int search_history[13][64]; // Array for history heuristics.
+    unsigned int search_history[12][64]; // Array for history heuristics.
     unsigned int search_killers[2][MAX_DEPTH]; // Array for killer heuristics.
 
     Board()
@@ -209,7 +210,7 @@ struct Board
 
         for(unsigned int i = 0; i < 14; i++) chessboard[i] = 0ULL;
 
-        for(unsigned int i = 0; i < 13; i++)
+        for(unsigned int i = 0; i < 12; i++)
         {
             for(unsigned int j = 0; j < 64; j++)
                 search_history[i][j] = 0;
@@ -234,7 +235,7 @@ struct Board
 
         for(unsigned int i = 0; i < 14; i++) chessboard[i] = 0ULL;
 
-        for(unsigned int i = 0; i < 13; i++)
+        for(unsigned int i = 0; i < 12; i++)
         {
             for(unsigned int j = 0; j < 64; j++)
                 search_history[i][j] = 0;

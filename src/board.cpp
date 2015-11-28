@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.cpp
     @author Shreyas Vinod
-    @version 0.4.2
+    @version 0.4.3
 
     @brief Handles the board representation for the engine.
 
@@ -57,6 +57,7 @@
         * Now uses typedef unsigned long long instead of 'uint64_t'.
     * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
     * 25/11/2015 0.4.2 Added parse_move(Board&, std::string).
+    * 28/11/2015 0.4.3 Added PV capabilities and history/killer heuristics.
 */
 
 #include "debug.h"
