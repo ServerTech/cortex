@@ -35,8 +35,7 @@ inline void push_quiet_move(MoveList& ml, unsigned int move,
     const Board& board);
 inline void push_capture_move(MoveList& ml, unsigned int move,
     const Board& board);
-inline void push_enp_capture_move(MoveList& ml, unsigned int move,
-    const Board& board);
+inline void push_enp_capture_move(MoveList& ml, unsigned int move);
 inline void push_castling_move(MoveList& ml, unsigned int move);
 void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
@@ -140,8 +139,31 @@ std::string pretty_move_list(const std::vector<Move>& list)
 inline void push_quiet_move(MoveList& ml, unsigned int move,
     const Board& board)
 {
-    Move move_push(move, 0);
-    ml.list.push_back(move_push);
+    if(board.search_killers[0][board.ply] == move)
+    {
+        Move move_push(move, 90000);
+        ml.list.push_back(move_push);
+    }
+    else if(board.search_killers[1][board.ply] == move)
+    {
+        Move move_push(move, 80000);
+        ml.list.push_back(move_push);
+    }
+    else
+    {
+        assert((GET_BB(DEP_CELL(move)) != 0ULL) &&
+            ((GET_BB(DEP_CELL(move)) &
+            (GET_BB(DEP_CELL(move)) - 1)) == 0ULL));
+
+        assert((GET_BB(DST_CELL(move)) != 0ULL) &&
+            ((GET_BB(DST_CELL(move)) &
+            (GET_BB(DST_CELL(move)) - 1)) == 0ULL));
+
+        Move move_push(move, board.search_history[determine_type(board,
+            GET_BB(DEP_CELL(move)))][determine_type(board,
+            GET_BB(DST_CELL(move)))]);
+        ml.list.push_back(move_push);
+    }
 }
 
 /**
@@ -163,10 +185,12 @@ inline void push_capture_move(MoveList& ml, unsigned int move,
     else
     {
         ml.attacked |= GET_BB(DST_CELL(move));
+
         assert((GET_BB(DEP_CELL(move)) != 0ULL) &&
             ((GET_BB(DEP_CELL(move)) & (GET_BB(DEP_CELL(move)) - 1)) == 0ULL));
+
         Move move_push(move, MVV_LVA_ST[cap_type][determine_type(board,
-            GET_BB(DEP_CELL(move)))]);
+            GET_BB(DEP_CELL(move)))] + 100000);
         ml.list.push_back(move_push);
     }
 }
@@ -181,11 +205,10 @@ inline void push_capture_move(MoveList& ml, unsigned int move,
     @return void.
 */
 
-inline void push_enp_capture_move(MoveList& ml, unsigned int move,
-    const Board& board)
+inline void push_enp_capture_move(MoveList& ml, unsigned int move)
 {
     ml.attacked |= GET_BB(DST_CELL(move));
-    Move move_push(move, 105);
+    Move move_push(move, 100105);
     ml.list.push_back(move_push);
 }
 
@@ -200,7 +223,7 @@ inline void push_enp_capture_move(MoveList& ml, unsigned int move,
 
 inline void push_castling_move(MoveList& ml, unsigned int move)
 {
-    Move move_push(move, 0);
+    Move move_push(move, 50000);
     ml.list.push_back(move_push);
 }
 
@@ -711,8 +734,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
                 if(uint_3 == board.en_pas_sq)
                 {
                     push_enp_capture_move(ml,
-                        GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP),
-                        board);
+                        GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP));
                 }
                 else if(u64_3 & B_RANK[8]) // Check if the pawn reached rank 8.
                 {
@@ -755,8 +777,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
                 if(uint_3 == board.en_pas_sq)
                 {
                     push_enp_capture_move(ml,
-                        GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP),
-                        board);
+                        GET_MOVE(uint_1, uint_3, bP, EMPTY, MFLAGEP));
                 }
                 else if(u64_3 & B_RANK[8]) // Check if the pawn reached rank 8.
                 {
@@ -849,8 +870,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
                 if(uint_3 == board.en_pas_sq)
                 {
                     push_enp_capture_move(ml,
-                        GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP),
-                        board);
+                        GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP));
                 }
                 else if(u64_3 & B_RANK[1]) // Check if the pawn reached rank 1.
                 {
@@ -893,8 +913,7 @@ void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board)
                 if(uint_3 == board.en_pas_sq)
                 {
                     push_enp_capture_move(ml,
-                        GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP),
-                        board);
+                        GET_MOVE(uint_1, uint_3, wP, EMPTY, MFLAGEP));
                 }
                 else if(u64_3 & B_RANK[1]) // Check if the pawn reached rank 1.
                 {

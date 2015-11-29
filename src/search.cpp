@@ -19,7 +19,7 @@
 #include <algorithm> // std::sort()
 
 #include "search.h"
-#include "move.h" // COORD_MOVE()
+#include "move.h" // IS_CAP() and COORD_MOVE()
 #include "movegen.h"
 #include "evaluate.h"
 #include "hash_table.h"
@@ -136,6 +136,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     }
 
     unsigned int best_move = NO_MOVE;
+    unsigned int pv_move = probe_pv_table(board.pv_table, board.hash_key);
     int score = -INFINITY_C;
 
     int old_alpha = alpha;
@@ -145,10 +146,24 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
     MoveList ml = gen_moves(board);
 
+    list_size = ml.list.size();
+
+    if(pv_move != NO_MOVE)
+    {
+        for(unsigned int i = 0; i < list_size; i++)
+        {
+            list_move = ml.list.at(i).move;
+
+            if(pv_move == ml.list.at(i).move)
+            {
+                ml.list.at(i).score = 200000;
+                break;
+            }
+        }
+    }
+
     std::sort(ml.list.begin(), ml.list.end(),
         [](const Move& lhs, const Move& rhs){ return lhs.score > rhs.score; });
-
-    list_size = ml.list.size();
 
     for(unsigned int i = 0; i < list_size; i++)
     {
@@ -162,16 +177,41 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
         undo_move(board);
 
-        if(score > alpha)
+        if(score > alpha) // Alpha cutoff
         {
-            if(score >= beta)
+            if(score >= beta) // Beta cutoff
             {
                 if(legal == 1) search_info.fhf++;
                 search_info.fh++;
+
+                if(!IS_CAP(list_move))
+                {
+                    board.search_killers[1][board.ply] =
+                        board.search_killers[0][board.ply];
+
+                    board.search_killers[0][board.ply] = list_move;
+                }
+
                 return beta;
             }
+
             alpha = score;
             best_move = list_move;
+
+            if(!IS_CAP(list_move))
+            {
+                assert((GET_BB(DEP_CELL(best_move)) != 0ULL) &&
+                    ((GET_BB(DEP_CELL(best_move)) &
+                    (GET_BB(DEP_CELL(best_move)) - 1)) == 0ULL));
+
+                assert((GET_BB(DST_CELL(best_move)) != 0ULL) &&
+                    ((GET_BB(DST_CELL(best_move)) &
+                    (GET_BB(DST_CELL(best_move)) - 1)) == 0ULL));
+
+                board.search_history[determine_type(board,
+                    GET_BB(DEP_CELL(best_move)))][determine_type(board,
+                    GET_BB(DST_CELL(best_move)))] += depth;
+            }
         }
     }
 
