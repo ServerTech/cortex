@@ -206,7 +206,7 @@ struct Board
     :side(WHITE), ply(0), his_ply(0), castle_perm(15), en_pas_sq(NO_SQ),
         fifty(0), hash_key(0ULL), history(), pv_table()
     {
-        history.reserve(64);
+        history.reserve(256);
 
         for(unsigned int i = 0; i < 14; i++) chessboard[i] = 0ULL;
 
@@ -231,7 +231,7 @@ struct Board
     :side(s), ply(p), his_ply(hp), castle_perm(cp), en_pas_sq(enpsq),
         fifty(f), hash_key(hk), history(), pv_table(), pv_array()
     {
-        history.reserve(64);
+        history.reserve(256);
 
         for(unsigned int i = 0; i < 14; i++) chessboard[i] = 0ULL;
 
