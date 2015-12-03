@@ -8,6 +8,7 @@
 #include "search.h"
 #include "hash.h"
 #include "hash_table.h"
+#include "chronos.h"
 #include "perft.h"
 
 #define FEN_START "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -36,7 +37,7 @@ int main()
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
     std::string usr_cmd;
-    unsigned int depth, move;
+    unsigned int argument, move;
 
     while(1)
     {
@@ -55,12 +56,26 @@ int main()
             }
             else std::cout << "ERROR: No move to undo." << std::endl << std::endl;
         }
-        else if(usr_cmd == "search")
+        else if(usr_cmd == "searchd")
         {
-            std::cin >> depth;
+            std::cin >> argument;
 
             SearchInfo search_info;
-            search_info.depth = depth;
+            search_info.depth = argument;
+
+            search(board, search_info);
+            std::cout << std::endl;
+        }
+        else if(usr_cmd == "searcht")
+        {
+            std::cin >> argument;
+
+            SearchInfo search_info;
+            search_info.time_set = 1;
+            search_info.infinite = 1;
+            search_info.max_time = argument * 1000;
+
+            search_info.start_time = get_cur_time();
 
             search(board, search_info);
             std::cout << std::endl;
@@ -72,11 +87,11 @@ int main()
         }
         else if(usr_cmd == "perft")
         {
-            std::cin >> depth;
+            std::cin >> argument;
 
             std::clock_t begin = std::clock();
 
-            perform_perft_verbose(board, depth);
+            perform_perft_verbose(board, argument);
 
             std::clock_t end = std::clock();
 

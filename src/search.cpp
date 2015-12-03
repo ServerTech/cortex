@@ -211,7 +211,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
     if((is_repetition(board) || board.fifty >= 100) && board.ply) return 0;
 
-    if(board.ply >= MAX_DEPTH) // Maximum depth.
+    if(board.ply >= MAX_DEPTH - 1) // Maximum depth.
     {
         return static_eval(board);
     }
@@ -381,7 +381,12 @@ void search(Board& board, SearchInfo& search_info)
 
     clear_for_search(board, search_info); // Get prepped for search.
 
-    for(unsigned int current_depth = 1; current_depth <= search_info.depth;
+    unsigned int to_depth;
+
+    if(search_info.infinite) to_depth = MAX_DEPTH - 1;
+    else to_depth = search_info.depth;
+
+    for(unsigned int current_depth = 1; current_depth <= to_depth;
         current_depth++) // Iterative deepening!
     {
         best_score = alpha_beta(-INFINITY_C, INFINITY_C, current_depth,
