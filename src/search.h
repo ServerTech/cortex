@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename search.h
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 0.1.2
 
     @brief The heart of the alpha-beta algorithm that makes computer
            chess possible.
@@ -12,7 +12,9 @@
 
     ******************** VERSION CONTROL ********************
     * 25/11/2015 File created.
-    * 28/11/2015 0.1.0 Initial version.
+    * 29/11/2015 0.1.0 Initial version.
+    * 02/12/2015 0.1.1 Added time handling.
+    * 02/12/2015 0.1.2 Added null move pruning.
 */
 
 #ifndef SEARCH_H
@@ -21,6 +23,7 @@
 #include "debug.h"
 
 #include "board.h"
+#include "chronos.h" // Time and get_time_diff()
 #include "defs.h"
 
 // Structures
@@ -29,32 +32,33 @@
     @brief Holds a bunch of information that's helpful while searching.
 
     @var start_time is the time the search began.
-    @var stop_time is when the search should end.
+    @var max_time is the maximum amount of time the search should take in
+         milliseconds.
     @var depth is the total depth to search to.
-    @var depth_set is the maximum depth to search to.
-    @var time_set is the maximum time to search for.
     @var moves_to_go is the number of moves to go, for time control.
     @var nodes is the number of nodes searched so far.
+    @var depth_set denotes whether a maximum depth has been set.
+    @var time_set denotes whether maximum time has been set.
     @var infinite denotes whether the search should go on infinitely, until
          it is interrupted.
     @var stopped denotes whether an interrupt was acknowledged, where the search
          should be interrupted.
     @var quit denotes whether to quit the program.
-    @var fh stands for 'fail-high', used for move ordering.
-    @var fhf stands for 'fail-high-first', used for move ordering.
+    @var fh stands for 'fail-high', used for move ordering statistics.
+    @var fhf stands for 'fail-high-first', used for move ordering statistics.
 */
 
 struct SearchInfo
 {
-    unsigned int start_time;
-    unsigned int stop_time;
+    Time start_time;
+    uint64 max_time;
     unsigned int depth;
-    unsigned int depth_set;
-    unsigned int time_set;
     unsigned int moves_to_go;
 
     uint64 nodes;
 
+    bool depth_set;
+    bool time_set;
     bool infinite;
     bool stopped;
     bool quit;
@@ -63,8 +67,8 @@ struct SearchInfo
     double fhf;
 
     SearchInfo()
-    :start_time(0), stop_time(0), depth(1), depth_set(1), time_set(0),
-        moves_to_go(0), nodes(0), infinite(0), stopped(0), quit(0),
+    :start_time(), max_time(0), depth(1), moves_to_go(0), nodes(0),
+        depth_set(0), time_set(0), infinite(0), stopped(0), quit(0),
         fh(0), fhf(0)
     {}
 };

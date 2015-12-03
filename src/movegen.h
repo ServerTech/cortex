@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename movegen.h
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 0.1.1
 
     @brief Generates moves given a board position.
 
@@ -12,6 +12,7 @@
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
     * 24/11/2015 0.1.0 Initial version.
+    * 29/11/2015 0.1.1 Added functions to generate just captures.
 */
 
 #ifndef MOVEGEN_H
@@ -65,24 +66,34 @@ extern std::string pretty_move_list(const std::vector<Move>& list);
 
 extern void gen_rook_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
+extern void gen_rook_cap_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Generate moves for knights.
 
 extern void gen_knight_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
+extern void gen_knight_cap_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
 
 // Generate moves for bishops/diagonal moves for queens.
 
 extern void gen_bishop_moves(uint64 u64_1, bool gen_side, MoveList& ml,
     const Board& board);
+extern void gen_bishop_cap_moves(uint64 u64_1, bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Generate moves for pawns.
 
 extern void gen_pawn_moves(bool gen_side, MoveList& ml, const Board& board);
+extern void gen_pawn_cap_moves(bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Generate moves for kings.
 
 extern void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
+extern void gen_king_cap_moves(bool gen_side, MoveList& ml,
+    const Board& board);
 
 // Check if a cell is under attack.
 
@@ -90,5 +101,6 @@ extern bool is_sq_attacked(unsigned int index, bool gen_side,
     const Board& board);
 
 extern MoveList gen_moves(const Board& board); // Generate all moves.
+extern MoveList gen_capture_moves(const Board& board); // Generate all captures.
 
 #endif // MOVEGEN_H

@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.cpp
     @author Shreyas Vinod
-    @version 0.4.3
+    @version 0.4.5
 
     @brief Handles the board representation for the engine.
 
@@ -58,6 +58,10 @@
     * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
     * 25/11/2015 0.4.2 Added parse_move(Board&, std::string).
     * 28/11/2015 0.4.3 Added PV capabilities and history/killer heuristics.
+    * 02/12/2015 0.4.4 Added extra functions for null move pruning.
+        * Added make_null_move(Board&).
+        * Added undo_null_move(Board&).
+    * 02/12/2015 0.4.5 Added transposition table.
 */
 
 #include "debug.h"
@@ -90,6 +94,8 @@ inline void move_piece_cap(Board& board, unsigned int piece_type,
     unsigned int cap_type, unsigned int dep_cell, unsigned int dst_cell);
 bool make_move(Board& board, unsigned int move);
 void undo_move(Board& board);
+void make_null_move(Board& board);
+void undo_null_move(Board& board);
 unsigned int parse_move(Board& board, std::string str_move);
 inline bool move_exists(Board& board, unsigned int move);
 unsigned int probe_pv_line(Board& board, unsigned int depth);
@@ -848,6 +854,81 @@ void undo_move(Board& board)
 }
 
 /**
+    @brief Make a null move on the given board.
+
+    @param board is the board to make the move on.
+
+    @return void.
+*/
+
+void make_null_move(Board& board)
+{
+    UndoMove undo_ms(NO_MOVE, board.castle_perm, board.en_pas_sq, board.fifty,
+        board.hash_key); // Create the undo move structure.
+
+    board.history.push_back(undo_ms); // Push undo structure into history.
+
+    // Clear en passant square
+
+    if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash en passant square out.
+    board.en_pas_sq = NO_SQ; // Set en passant square to 'NO_SQ' (65).
+
+    // Increment counters
+
+    board.ply++;
+    board.his_ply++;
+
+    board.side = !board.side; // Swap sides.
+    HASH_SIDE(board); // Hash the side (swap).
+
+    assert(board.his_ply == board.history.size());
+}
+
+/**
+    @brief Undo the previous move, which was made using the make_null_move()
+           function.
+
+    This function unmakes the previous move that was made on the board, which
+    should have been a null move.
+
+    @param board is the board to undo the move on.
+
+    @return void.
+
+    @warning The previous move must have been a null move. Otherwise, bad things
+             will happen.
+*/
+
+void undo_null_move(Board& board)
+{
+    assert(board.history.size() > 0);
+
+    UndoMove ms = board.history.back();
+
+    // Decrement ply counters
+
+    board.ply--;
+    board.his_ply--;
+
+    if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash out en passant square.
+
+    HASH_CA(board); // Hash out castling permissions.
+
+    board.castle_perm = ms.castle_perm;
+    board.en_pas_sq = ms.en_pas_sq;
+    board.fifty = ms.fifty;
+
+    if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash in en passant square.
+
+    board.side = !board.side; // Swap sides.
+    HASH_SIDE(board); // Hash the side (swap).
+
+    board.history.pop_back(); // Pop the last move out.
+
+    assert(board.his_ply == board.history.size());
+}
+
+/**
     @brief Converts a string representation of a move in pure algebraic
            notation into the standard convention for representing moves
            in the engine.
@@ -1011,7 +1092,7 @@ unsigned int probe_pv_line(Board& board, unsigned int depth)
     assert(board.ply == 0);
     assert(depth < MAX_DEPTH);
 
-    unsigned int move = probe_pv_table(board.pv_table, board.hash_key);
+    unsigned int move = probe_pv_table(board.t_table, board.hash_key);
     unsigned int count = 0;
 
     // Probe the table.
@@ -1026,7 +1107,7 @@ unsigned int probe_pv_line(Board& board, unsigned int depth)
         }
         else break;
 
-        move = probe_pv_table(board.pv_table, board.hash_key);
+        move = probe_pv_table(board.t_table, board.hash_key);
     }
 
     // Reset the board to the original position.

@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.3
+    @version 0.4.5
 
     @brief Handles the board representation for the engine.
 
@@ -58,6 +58,10 @@
     * 23/11/2015 0.4.1 Added the ability to make and unmake (undo) moves.
     * 25/11/2015 0.4.2 Added parse_move(Board&, std::string).
     * 28/11/2015 0.4.3 Added PV capabilities and history/killer heuristics.
+    * 02/12/2015 0.4.4 Added extra functions for null move pruning.
+        * Added make_null_move(Board&).
+        * Added undo_null_move(Board&).
+    * 02/12/2015 0.4.5 Added transposition table.
 */
 
 #ifndef BOARD_H
@@ -134,7 +138,7 @@ struct UndoMove
     @var chessboard is 14 element array of 64-bit unsigned integers, each
          storing the state of the board in bitboard representation, indexed
          in standard convention.
-    @var pv_table is the Principal Variation hash table.
+    @var t_table is the transposition hash table.
     @var pv_array stores the current best PV line obtained from the PV hash
          table.
     @var search_history is an array used for the history heuristic.
@@ -196,7 +200,7 @@ struct Board
 
     uint64 chessboard[14]; // Board representation.
 
-    PVTable pv_table; // Principal Variation (PV) hash table.
+    TranspositionTable t_table; // Principal Variation (PV) hash table.
     unsigned int pv_array[MAX_DEPTH]; // PV line array.
 
     unsigned int search_history[12][64]; // Array for history heuristics.
@@ -204,7 +208,7 @@ struct Board
 
     Board()
     :side(WHITE), ply(0), his_ply(0), castle_perm(15), en_pas_sq(NO_SQ),
-        fifty(0), hash_key(0ULL), history(), pv_table()
+        fifty(0), hash_key(0ULL), history(), t_table()
     {
         history.reserve(256);
 
@@ -229,7 +233,7 @@ struct Board
     Board(bool s, unsigned int p, unsigned int hp, unsigned int cp,
         unsigned int enpsq, unsigned int f, uint64 hk)
     :side(s), ply(p), his_ply(hp), castle_perm(cp), en_pas_sq(enpsq),
-        fifty(f), hash_key(hk), history(), pv_table(), pv_array()
+        fifty(f), hash_key(hk), history(), t_table()
     {
         history.reserve(256);
 
@@ -292,6 +296,8 @@ extern std::string pretty_board(const Board& board);
 
 extern bool make_move(Board& board, unsigned int move); // Make a move.
 extern void undo_move(Board& board); // Unmake (undo) the previous move.
+extern void make_null_move(Board& board); // Make a null move.
+extern void undo_null_move(Board& board); // Unmake (undo) the null move.
 
 // Parse a move in pure algebraic notation.
 

@@ -30,7 +30,7 @@ int main()
     init_mvv_lva();
 
     Board board;
-    init_pv_table(board.pv_table, 2097152); // Initialise PV hash table to 2 MB.
+    init_table(board.t_table, 268435456); // Initialise PV hash table to 256 MB.
 
     if(!parse_fen(board, FEN_START)) std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
@@ -82,6 +82,11 @@ int main()
 
             std::cout << "It took: " << double(end - begin) / CLOCKS_PER_SEC << " cs." << std::endl << std::endl;
         }
+        else if(usr_cmd == "cleartable")
+        {
+            clear_table(board.t_table);
+            std::cout << "Cleared transposition table successfully." << std::endl << std::endl;
+        }
         else if(usr_cmd == "clear")
         {
             std::cout << "\x1B[2J\x1B[H";
@@ -97,4 +102,6 @@ int main()
             std::cout << "ERROR: What'd you mess up, huh? Be glad I'm not sentient, yet." << std::endl << std::endl;
         }
     }
+
+    free_table(board.t_table);
 }

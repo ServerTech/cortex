@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename hash_table.h
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 0.1.1
 
     @brief Handles hash tables for efficient move searching.
 
@@ -12,6 +12,7 @@
     ******************** VERSION CONTROL ********************
     * 25/11/2015 File created.
     * 28/11/2015 0.1.0 Initial version.
+    * 03/12/2015 0.1.1 Updated to a full transposition table.
 */
 
 #ifndef HASH_TABLE_H
@@ -23,34 +24,45 @@
 
 #include "defs.h"
 
+// Enumerations
+
+enum { TFALPHA = 1, TFBETA, TFEXACT }; // Flags
+
 // Structures
 
 /**
-    @brief Holds information about a move and its corresponding board's hash
-           key in order to store Principal Variation (PV) lines in a PV table.
+    @brief Holds a bunch of information about previous searches, to be inserted
+           into the transposition table for future use.
 
-    @var move is the move made on the board.
     @var hash_key is the zobrist hash of the board.
+    @var move is the move made on the board.
+    @var score is the evaluation of the board for the given move.
+    @var depth is the depth this particular game state was evaluated to.
+    @var flag represents one of three flags: TFALPHA; TFBETA; TFEXACT.
 */
 
-struct PVEntry
+struct TableEntry
 {
-    unsigned int move; // Move made.
     uint64 hash_key; // Zobrist hash of the board.
+    unsigned int move; // Move made.
+    int score; // Evaluation of the board after the move is made.
+    unsigned int depth; // Depth to which the board was previously searched.
+    unsigned int flag; // Flag set.
 
-    PVEntry()
-    :move(0), hash_key(0ULL)
+    TableEntry()
+    :hash_key(0ULL), move(NO_MOVE), score(0), depth(0), flag(0)
     {}
 
-    PVEntry(unsigned int m, uint64 hk)
-    :move(m), hash_key(hk)
+    TableEntry(uint64 hk, unsigned int m, int s, unsigned int d,
+        unsigned int f)
+    :hash_key(hk), move(m), score(s), depth(d), flag(f)
     {}
 };
 
 /**
-    @brief Stores a bunch of PV entries.
+    @brief Stores a bunch of table entries for the transposition table.
 
-    @var pv_entry is the pv_entry array, dynamically allocated.
+    @var t_entry is the t_entry array, which is dynamically allocated.
     @var num_entries is the number of entries in the array.
 
     @warning Memory must be initialised.
@@ -58,30 +70,39 @@ struct PVEntry
              the memory must be reinitialised.
 */
 
-struct PVTable
+struct TranspositionTable
 {
-    PVEntry* pv_entry;
+    TableEntry* t_entry;
     unsigned int num_entries;
 
-    PVTable()
-    :pv_entry(nullptr), num_entries(0)
+    TranspositionTable()
+    :t_entry(nullptr), num_entries(0)
     {}
 };
 
 // External function definitions
 
-// Initialise PV hash table.
+// Initialise hash table.
 
-extern void init_pv_table(PVTable& pv_table, unsigned int pv_size);
+extern void init_table(TranspositionTable& t_table, unsigned int t_size);
 
-// Store move into the PV hash table.
+extern void free_table(TranspositionTable& t_table); // Free table memory.
+extern void clear_table(TranspositionTable& t_table); // Clear out the table.
 
-extern void store_pv_move(PVTable& pv_table, uint64 hash_key, unsigned int move);
+// Store a hash entry.
 
-// Retrieve move from the PV hash table.
+extern void store_entry(TranspositionTable& t_table, unsigned int ply,
+    uint64 hash_key, unsigned int move, int score, unsigned int depth,
+    unsigned int flag);
 
-extern unsigned int probe_pv_table(PVTable& pv_table, uint64 hash_key);
+// Retrieve a hash entry.
 
-extern void clear_pv_table(PVTable& pv_table); // Clear out PV table.
+extern bool probe_table(TranspositionTable& t_table, unsigned int ply,
+    uint64 hash_key, unsigned int depth, unsigned int& pv_move, int& score,
+    int alpha, int beta);
+
+// Retrieve a PV move from the hash table.
+
+extern unsigned int probe_pv_table(TranspositionTable& t_table, uint64 hash_key);
 
 #endif // HASH_TABLE_H

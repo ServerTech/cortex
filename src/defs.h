@@ -28,7 +28,9 @@ typedef unsigned long long uint64;
 
 // Globals
 
+#define INFINITY_C 50000
 #define MAX_DEPTH 64
+#define IS_MATE 49936
 
 enum { BLACK, WHITE };
 
