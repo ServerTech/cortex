@@ -397,20 +397,22 @@ void search(Board& board, SearchInfo& search_info)
         pv_moves = probe_pv_line(board, current_depth); // Probe for PV line.
         best_move = board.pv_array[0];
 
-        // Output some key information to standard output.
+        // Output some key information to standard output (in UCI format).
 
-        std::cout << "Depth: " << current_depth << "; score: " << best_score <<
-            "; move: " << COORD_MOVE(best_move) << "; nodes: " <<
-            search_info.nodes;
+        std::cout << "info score cp " << best_score << " depth " <<
+            current_depth << " nodes " << search_info.nodes << " time " <<
+            get_time_diff(search_info.start_time);
 
-        std::cout << "; PV:";
+        std::cout << " pv";
 
         for(unsigned int i = 0; i < pv_moves; i++)
         {
             std::cout << " " << COORD_MOVE(board.pv_array[i]);
         }
 
-        std::cout << "; ordering: " <<
+        std::cout << std::endl;
+
+        std::cout << "ordering " <<
             ((search_info.fhf / search_info.fh) * 100) << "%" << std::endl;
     }
 }

@@ -1,5 +1,18 @@
+/*
+    Cortex - Self-learning Chess Engine
+    @filename main.cpp
+    @author Shreyas Vinod, Anna Grygierzec
+    @version 0.1.0
+
+    @brief Has the main function.
+
+    ******************** VERSION CONTROL ********************
+    * xx/06/2015 File created.
+    * 02/12/2015 0.1.0 Added this bit.
+*/
+
 #include <iostream>
-#include <ctime>
+#include <string>
 
 #include "defs.h"
 #include "board.h"
@@ -9,6 +22,7 @@
 #include "hash.h"
 #include "hash_table.h"
 #include "chronos.h"
+#include "uci.h"
 #include "perft.h"
 
 #define FEN_START "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -27,16 +41,37 @@
 
 int main()
 {
+    std::cin.setf(std::ios_base::unitbuf); // Set stdin as unbuffered.
+    std::cout.setf(std::ios_base::unitbuf); // Set stdout as unbuffered.
+
+    std::string usr_cmd;
+
     init_hash();
     init_mvv_lva();
 
+    std::cout << "Hi, I'm Cortex." << std::endl;
+    std::cout << "What mode would you like to enter? ";
+    std::cin >> usr_cmd;
+    std::cin.ignore();
+
+    if(usr_cmd == "uci")
+    {
+        uci_loop(); // Enter UCI loop.
+        return 0;
+    }
+    else if(usr_cmd != "cmd")
+    {
+        std::cout << "Huh? Defaulting to cmd now.";
+    }
+
+    std::cout << std::endl;
+
     Board board;
-    init_table(board.t_table, 268435456); // Initialise PV hash table to 256 MB.
+    init_table(board.t_table, 268435456); // Initialise hash table to 256 MB.
 
     if(!parse_fen(board, FEN_START)) std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
-    std::string usr_cmd;
     unsigned int argument, move;
 
     while(1)
@@ -54,7 +89,8 @@ int main()
                 board.ply = 0;
                 std::cout << pretty_board(board) << std::endl << std::endl;
             }
-            else std::cout << "ERROR: No move to undo." << std::endl << std::endl;
+            else std::cout << "ERROR: No move to undo." << std::endl <<
+                std::endl;
         }
         else if(usr_cmd == "searchd")
         {
@@ -89,18 +125,18 @@ int main()
         {
             std::cin >> argument;
 
-            std::clock_t begin = std::clock();
+            Time begin = get_cur_time();
 
             perform_perft_verbose(board, argument);
 
-            std::clock_t end = std::clock();
-
-            std::cout << "It took: " << double(end - begin) / CLOCKS_PER_SEC << " cs." << std::endl << std::endl;
+            std::cout << "It took: " << get_time_diff(begin) <<
+                " s." << std::endl << std::endl;
         }
         else if(usr_cmd == "cleartable")
         {
             clear_table(board.t_table);
-            std::cout << "Cleared transposition table successfully." << std::endl << std::endl;
+            std::cout << "Cleared transposition table successfully." <<
+                std::endl << std::endl;
         }
         else if(usr_cmd == "clear")
         {
@@ -114,9 +150,12 @@ int main()
         }
         else
         {
-            std::cout << "ERROR: What'd you mess up, huh? Be glad I'm not sentient, yet." << std::endl << std::endl;
+            std::cout << "ERROR: What'd you mess up, huh? " <<
+                "Be glad I'm not sentient, yet." << std::endl << std::endl;
         }
     }
 
     free_table(board.t_table);
+
+    return 0;
 }
