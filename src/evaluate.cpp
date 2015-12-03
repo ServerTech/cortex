@@ -118,6 +118,10 @@ int static_eval(Board& board)
 
     // White
 
+    // White Queens
+
+    score += CNT_BITS(board.chessboard[wQ]) * 900;
+
     // White rooks
 
     u64_1 = board.chessboard[wR];
@@ -163,6 +167,10 @@ int static_eval(Board& board)
     }
 
     // Black
+
+    // Black Queens
+
+    score -= CNT_BITS(board.chessboard[bQ]) * 900;
 
     // Black rooks
 
