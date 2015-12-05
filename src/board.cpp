@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.cpp
     @author Shreyas Vinod
-    @version 0.4.5
+    @version 0.4.6
 
     @brief Handles the board representation for the engine.
 
@@ -62,12 +62,13 @@
         * Added make_null_move(Board&).
         * Added undo_null_move(Board&).
     * 02/12/2015 0.4.5 Added transposition table.
+    * 04/12/2015 0.4.6 Added FEN parsing for fifty move and ply counters.
 */
 
 #include "debug.h"
 
 #include <sstream> // std::stringstream
-#include <ctype.h> // isalpha() and isdigit()
+#include <cctype> // isalpha() and isdigit()
 
 #include "board.h"
 #include "move.h" // COORD()
@@ -78,7 +79,7 @@
 // Prototypes
 
 void reset_board(Board& board);
-bool parse_fen(Board& board, const std::string fen);
+bool parse_fen(Board& board, const std::string fen, unsigned int& i);
 unsigned int determine_type(const Board& board, uint64 bit_chk);
 char conv_char(const Board& board, unsigned int index);
 std::string pretty_board(const Board& board);
@@ -141,6 +142,7 @@ void reset_board(Board& board)
 
     @param board is the board to initialise with the FEN string.
     @param fen is the FEN string.
+    @param i is the integer holding where the string is currently pointing to.
 
     @return bool value representing whether initialisation was
             successful.
@@ -150,7 +152,7 @@ void reset_board(Board& board)
              the engine in its entirety. It just won't work.
     @warning Do NOT place pawns on ranks one or eight. This is an
              impossible occurrence, and the engine will fail to promote them.
-             In fact, they might vanish.
+             In fact, they might vanish, I don't really know.
     @warning Assumes ASCII.
     @warning This will reset 'board'.
     @warning Please check if the function returns 1, else the initialisation
@@ -158,9 +160,9 @@ void reset_board(Board& board)
              trying to figure out what went wrong.
 */
 
-bool parse_fen(Board& board, const std::string fen)
+bool parse_fen(Board& board, const std::string fen, unsigned int& i)
 {
-    int file = FILE_A, rank = RANK_8, piece, count, i = 0;
+    int file = FILE_A, rank = RANK_8, piece, count;
     char c;
 
     reset_board(board); // Reset the board to fill new values.
@@ -261,9 +263,40 @@ bool parse_fen(Board& board, const std::string fen)
         board.en_pas_sq = GET_INDEX(file, rank);
     }
 
-    i += 2;
+    // Optional counter initialisation
 
-    // Fifty-move rule counter and move counter ignored for now.
+    int num, temp;
+
+    if(((i + 2) < fen.length()) && isdigit(fen[i + 2]))
+    {
+        // Fifty-move rule counter
+
+        i += 2;
+
+        num = std::stoi(fen.substr(i));
+
+        temp = num;
+        while((temp /= 10) != 0) i++;
+
+        board.fifty = num;
+
+        // Move counter
+
+        if(((i + 2) < fen.length()) && isdigit(fen[i + 2]))
+        {
+            i += 2;
+
+            num = std::stoi(fen.substr(i));
+
+            temp = num;
+            while((temp /= 10) != 0) i++;
+
+            // if(board.side == WHITE) board.his_ply = (num * 2) - 2;
+            // else board.his_ply = (num * 2) - 1;
+
+            board.his_ply = 0; // History ply ignored for now.
+        }
+    }
 
     board.hash_key = gen_hash(board); // Generate zobrist hash.
 

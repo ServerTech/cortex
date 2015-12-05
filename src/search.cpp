@@ -25,6 +25,7 @@
 #include "movegen.h"
 #include "evaluate.h"
 #include "hash_table.h"
+#include "misc.h"
 
 // Function Prototypes
 
@@ -50,10 +51,12 @@ void search(Board& board, SearchInfo& search_info);
 inline void check_up(SearchInfo& search_info)
 {
     if(search_info.time_set &&
-        get_time_diff(search_info.start_time) >= search_info.max_time)
+        get_time_diff(search_info.start_time) >= search_info.move_time)
     {
         search_info.stopped = 1;
     }
+
+    read_input(search_info);
 }
 
 /**
@@ -381,12 +384,7 @@ void search(Board& board, SearchInfo& search_info)
 
     clear_for_search(board, search_info); // Get prepped for search.
 
-    unsigned int to_depth;
-
-    if(search_info.infinite) to_depth = MAX_DEPTH - 1;
-    else to_depth = search_info.depth;
-
-    for(unsigned int current_depth = 1; current_depth <= to_depth;
+    for(unsigned int current_depth = 1; current_depth <= search_info.depth;
         current_depth++) // Iterative deepening!
     {
         best_score = alpha_beta(-INFINITY_C, INFINITY_C, current_depth,
@@ -412,7 +410,9 @@ void search(Board& board, SearchInfo& search_info)
 
         std::cout << std::endl;
 
-        std::cout << "ordering " <<
-            ((search_info.fhf / search_info.fh) * 100) << "%" << std::endl;
+        // std::cout << "ordering " <<
+        //     ((search_info.fhf / search_info.fh) * 100) << "%" << std::endl;
     }
+
+    std::cout << std::endl << "bestmove " << COORD_MOVE(best_move) << std::endl;
 }

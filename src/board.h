@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.5
+    @version 0.4.6
 
     @brief Handles the board representation for the engine.
 
@@ -62,6 +62,7 @@
         * Added make_null_move(Board&).
         * Added undo_null_move(Board&).
     * 02/12/2015 0.4.5 Added transposition table.
+    * 04/12/2015 0.4.6 Added FEN parsing for fifty move and ply counters.
 */
 
 #ifndef BOARD_H
@@ -280,7 +281,10 @@ inline void update_secondary(Board& board)
 // External function definitions
 
 extern void reset_board(Board& board); // Resets the board.
-extern bool parse_fen(Board& board, const std::string fen); // Parse FEN.
+
+// Parse FEN
+
+extern bool parse_fen(Board& board, const std::string fen, unsigned int& i);
 
 // Determine type of piece.
 

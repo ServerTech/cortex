@@ -52,7 +52,6 @@ int main()
     std::cout << "Hi, I'm Cortex." << std::endl;
     std::cout << "What mode would you like to enter? ";
     std::cin >> usr_cmd;
-    std::cin.ignore();
 
     if(usr_cmd == "uci")
     {
@@ -61,7 +60,7 @@ int main()
     }
     else if(usr_cmd != "cmd")
     {
-        std::cout << "Huh? Defaulting to cmd now.";
+        std::cout << "Huh? Defaulting to cmd now." << std::endl;
     }
 
     std::cout << std::endl;
@@ -69,7 +68,9 @@ int main()
     Board board;
     init_table(board.t_table, 268435456); // Initialise hash table to 256 MB.
 
-    if(!parse_fen(board, FEN_START)) std::cout << "Parse error." << std::endl;
+    unsigned int i = 0;
+
+    if(!parse_fen(board, FEN_START, i)) std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
     unsigned int argument, move;
@@ -97,6 +98,7 @@ int main()
             std::cin >> argument;
 
             SearchInfo search_info;
+            search_info.depth_set = 1;
             search_info.depth = argument;
 
             search(board, search_info);
@@ -107,9 +109,9 @@ int main()
             std::cin >> argument;
 
             SearchInfo search_info;
+            search_info.depth = MAX_DEPTH;
             search_info.time_set = 1;
-            search_info.infinite = 1;
-            search_info.max_time = argument * 1000;
+            search_info.move_time = argument * 1000;
 
             search_info.start_time = get_cur_time();
 

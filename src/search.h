@@ -32,15 +32,13 @@
     @brief Holds a bunch of information that's helpful while searching.
 
     @var start_time is the time the search began.
-    @var max_time is the maximum amount of time the search should take in
+    @var move_time is the maximum amount of time the search should take in
          milliseconds.
     @var depth is the total depth to search to.
     @var moves_to_go is the number of moves to go, for time control.
     @var nodes is the number of nodes searched so far.
     @var depth_set denotes whether a maximum depth has been set.
     @var time_set denotes whether maximum time has been set.
-    @var infinite denotes whether the search should go on infinitely, until
-         it is interrupted.
     @var stopped denotes whether an interrupt was acknowledged, where the search
          should be interrupted.
     @var quit denotes whether to quit the program.
@@ -51,7 +49,8 @@
 struct SearchInfo
 {
     Time start_time;
-    uint64 max_time;
+    uint64 move_time;
+
     unsigned int depth;
     unsigned int moves_to_go;
 
@@ -59,7 +58,6 @@ struct SearchInfo
 
     bool depth_set;
     bool time_set;
-    bool infinite;
     bool stopped;
     bool quit;
 
@@ -67,9 +65,8 @@ struct SearchInfo
     double fhf;
 
     SearchInfo()
-    :start_time(), max_time(0), depth(1), moves_to_go(0), nodes(0),
-        depth_set(0), time_set(0), infinite(0), stopped(0), quit(0),
-        fh(0), fhf(0)
+    :start_time(), move_time(0), depth(1), moves_to_go(0), nodes(0),
+        depth_set(0), time_set(0), stopped(0), quit(0), fh(0), fhf(0)
     {}
 };
 

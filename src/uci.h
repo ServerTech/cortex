@@ -9,7 +9,7 @@
 
     ******************** VERSION CONTROL ********************
     * 02/12/2015 File created.
-    * 02/12/2015 0.1.0 Initial version.
+    * 05/12/2015 0.1.0 Initial version.
 */
 
 #ifndef UCI_H
@@ -29,7 +29,7 @@ extern void uci_loop(); // UCI infinite loop.
 
 // Parses the UCI 'position' command.
 
-extern void parse_uci_position(const std::string& cmd, Board& board);
+extern bool parse_uci_position(const std::string& cmd, Board& board);
 
 // Parses the UCI 'go' command.
 
