@@ -17,12 +17,22 @@
             HASH_SIDE(Board&), HASH_CA(Board&) and HASH_EP(Board&).
 */
 
+/**
+    @file
+    @filename hash.h
+    @author Shreyas Vinod
+
+    @brief Handles zobrist hashing to generate hashes for game states.
+
+    Uses zobrist hashing to generate 64-bit hash keys for a given state of
+    the board.
+*/
+
 #ifndef HASH_H
 #define HASH_H
 
-#include "debug.h"
-
 #include "defs.h"
+
 #include "board.h"
 
 // Globals
@@ -113,7 +123,7 @@ inline void HASH_EP(Board& board)
     }
 }
 
-// External function definitions
+// External function declarations
 
 extern void init_hash(); // Initialise keys.
 extern uint64 gen_hash(const Board& board); // Generate hash from board.

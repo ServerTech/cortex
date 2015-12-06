@@ -17,12 +17,23 @@
             HASH_SIDE(Board&), HASH_CA(Board&) and HASH_EP(Board&).
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename hash.cpp
+    @author Shreyas Vinod
+
+    @brief Handles zobrist hashing to generate hashes for game states.
+
+    Uses zobrist hashing to generate 64-bit hash keys for a given state of
+    the board.
+*/
+
+#include "defs.h"
 
 #include <random> // std::mt19937_64()
 
 #include "hash.h"
-#include "defs.h"
+#include "board.h"
 
 // Prototypes
 
@@ -35,7 +46,7 @@ uint64 PIECE_KEYS[13][64]; // 64 keys for each piece; 64 for en passant.
 uint64 SIDE_KEY; // Hashed in if side to play is white.
 uint64 CASTLE_KEYS[16]; // 16 keys for castling permissions.
 
-// Functions
+// Function definitions
 
 /**
     @brief Initialises hash keys declared in hash.h with 64-bit random numbers.

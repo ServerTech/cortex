@@ -12,15 +12,23 @@
     * 29/11/2015 0.1.0 Initial version.
 */
 
+/**
+    @file
+    @filename evaluate.h
+    @author Anna Grygierzec
+
+    @brief Static evaluation function that returns an objective score
+           of the game state.
+*/
+
 #ifndef EVALUATE_H
 #define EVALUATE_H
 
-#include "debug.h"
-
-#include "board.h"
 #include "defs.h"
 
-// External function definitions
+#include "board.h"
+
+// External function declarations
 
 extern int static_eval(Board& board);
 

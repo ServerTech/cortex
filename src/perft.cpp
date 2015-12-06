@@ -11,13 +11,22 @@
     * 23/11/2015 0.1.0 Initial version.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename perft.cpp
+    @author Shreyas Vinod
+
+    @brief Performs basic perft testing on the move generator.
+*/
+
+#include "defs.h"
 
 #include <iostream>
 
 #include "perft.h"
-#include "movegen.h"
+#include "board.h"
 #include "move.h"
+#include "movegen.h"
 
 // Prototypes
 
@@ -25,7 +34,7 @@ uint64 perform_perft(Board& board, unsigned int depth);
 uint64 perform_perft_verbose(Board& board, unsigned int depth);
 void perft(Board& board, uint64& leaf_nodes, unsigned int depth);
 
-// Functions
+// Function definitions
 
 /**
     @brief Given a board and depth value, performs a basic perft test

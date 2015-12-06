@@ -1,13 +1,13 @@
 /*
     Cortex - Self-learning Chess Engine
     @filename misc.cpp
-    @author Oliver Brausch <http://home.arcor.de/dreamlike/chess/>
+    @author Shreyas Vinod
     @version 1.0.0
 
     @brief An embarrassing file using C with code by Oliver Brausch,
            to check for input waiting.
 
-    Refer http://home.arcor.de/dreamlike/chess/.
+    @see http://home.arcor.de/dreamlike/chess/.
 
     ******************** VERSION CONTROL ********************
     * 05/12/2015 File created.
@@ -15,30 +15,33 @@
 */
 
 /**
+    @file
     @filename misc.cpp
+    @author Shreyas Vinod
 
     @brief An embarrassing file using C with code by Oliver Brausch,
            to check for input waiting.
 
-    Refer http://home.arcor.de/dreamlike/chess/.
+    @see http://home.arcor.de/dreamlike/chess/.
 */
 
-#include "debug.h"
+#include "defs.h"
 
 #include <cstdio>
 #include <string.h>
 
-#include "misc.h"
-
 #ifdef WIN32
 #include "windows.h"
-  #else
+#include "unistd.h"
+#else
 #include "sys/time.h"
 #include "sys/select.h"
-#include "unistd.h"
-#endif
+#endif // #ifdef WIN32
 
-// Function prototypes
+#include "misc.h"
+#include "search.h"
+
+// Prototypes
 
 bool input_waiting();
 void read_input(SearchInfo& search_info);
@@ -56,8 +59,8 @@ bool input_waiting()
 #ifndef WIN32
     fd_set readfds;
     struct timeval tv;
-    FD_ZERO (&readfds);
-    FD_SET (fileno(stdin), &readfds);
+    FD_ZERO(&readfds);
+    FD_SET(fileno(stdin), &readfds);
     tv.tv_sec=0; tv.tv_usec=0;
     select(16, &readfds, nullptr, nullptr, &tv);
 
@@ -72,7 +75,7 @@ bool input_waiting()
         init = 1;
         inh = GetStdHandle(STD_INPUT_HANDLE);
         pipe = !GetConsoleMode(inh, &dw);
-        if (!pipe)
+        if(!pipe)
         {
             SetConsoleMode(inh, dw & ~(ENABLE_MOUSE_INPUT|ENABLE_WINDOW_INPUT));
             FlushConsoleInputBuffer(inh);
@@ -80,7 +83,7 @@ bool input_waiting()
     }
     if(pipe)
     {
-        if (!PeekNamedPipe(inh, NULL, 0, NULL, &dw, NULL)) return 1;
+        if(!PeekNamedPipe(inh, NULL, 0, NULL, &dw, NULL)) return 1;
         return dw;
     }
     else
@@ -88,7 +91,7 @@ bool input_waiting()
         GetNumberOfConsoleInputEvents(inh, &dw);
         return dw <= 1 ? 0 : dw;
     }
-#endif
+#endif // #inndef WIN32
 }
 
 /**

@@ -12,18 +12,26 @@
     * 05/12/2015 0.1.0 Initial version.
 */
 
+/**
+    @file
+    @filename uci.cpp
+    @author Shreyas Vinod
+
+    @brief Includes everything needed to support the UCI
+           (Universal Chess Interface) protocol.
+*/
+
 #ifndef UCI_H
 #define UCI_H
 
-#include "debug.h"
+#include "defs.h"
 
 #include <string> // std::string
 
 #include "board.h"
 #include "search.h"
-#include "defs.h"
 
-// External function definitions
+// External function declarations
 
 extern void uci_loop(); // UCI infinite loop.
 

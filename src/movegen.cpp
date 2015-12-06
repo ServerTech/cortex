@@ -2,24 +2,40 @@
     Cortex - Self-learning Chess Engine
     @filename movegen.cpp
     @author Shreyas Vinod
-    @version 0.1.1
+    @version 0.1.2
 
     @brief Generates moves given a board position.
 
     Includes structures and functions that help generate and store
-    pseudo-legal moves for given game states.
+    pseudo-legal (and legal) moves for given game states.
 
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
     * 24/11/2015 0.1.0 Initial version.
     * 29/11/2015 0.1.1 Added functions to generate just captures.
+    * 05/12/2015 0.1.2 Added functions to generate legal moves and captures.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename movegen.cpp
+    @author Shreyas Vinod
 
+    @brief Generates moves given a board position.
+
+    Includes structures and functions that help generate and store
+    pseudo-legal (and legal) moves for given game states.
+*/
+
+#include "defs.h"
+
+#include <string> // std::string
+#include <vector> // std::vector
 #include <sstream> // std::stringstream
 
 #include "movegen.h"
+#include "board.h" // Board structure.
+#include "move.h" // Move structure.
 #include "lookup_tables.h"
 
 // Globals
@@ -56,9 +72,11 @@ void gen_king_moves(bool gen_side, MoveList& ml, const Board& board);
 void gen_king_cap_moves(bool gen_side, MoveList& ml, const Board& board);
 bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board);
 MoveList gen_moves(const Board& board);
-MoveList gen_capture_moves(const Board& board);
+MoveList gen_captures(const Board& board);
+MoveList gen_legal_moves(Board& board);
+MoveList gen_legal_captures(Board& board);
 
-// Functions
+// Function definitions
 
 /**
     @brief Initialises the MVV-LVA scores lookup table.
@@ -2065,7 +2083,7 @@ bool is_sq_attacked(unsigned int index, bool gen_side, const Board& board)
 
     @param board is the board to generate all pseudo-legal moves for.
 
-    @return std::vector<Move> representing a collection of all pseudo-legal
+    @return MoveList representing a collection of all pseudo-legal
             moves for the given board state.
 */
 
@@ -2127,11 +2145,11 @@ MoveList gen_moves(const Board& board)
 
     @param board is the board to generate all pseudo-legal capture moves for.
 
-    @return std::vector<Move> representing a collection of all pseudo-legal
+    @return MoveList representing a collection of all pseudo-legal
             capture moves for the given board state.
 */
 
-MoveList gen_capture_moves(const Board& board)
+MoveList gen_captures(const Board& board)
 {
     MoveList ml; // Move list structure.
 
@@ -2179,6 +2197,84 @@ MoveList gen_capture_moves(const Board& board)
     // King
 
     gen_king_cap_moves(board.side, ml, board);
+
+    return ml;
+}
+
+/**
+    @brief Generates and returns a move list vector of all the possible
+           legal moves for the given board state.
+
+    @param board is the board to generate all legal moves for.
+
+    @return MoveList representing a collection of all legal moves for
+            the given board state.
+*/
+
+MoveList gen_legal_moves(Board& board)
+{
+    unsigned int list_move, list_size;
+
+    MoveList ml;
+    MoveList pseudo_moves = gen_moves(board);
+
+    ml.attacked = pseudo_moves.attacked;
+
+    list_size = pseudo_moves.list.size();
+
+    for(unsigned int i = 0; i < list_size; i++)
+    {
+        list_move = pseudo_moves.list.at(i).move;
+
+        if(make_move(board, list_move))
+        {
+            ml.list.push_back(pseudo_moves.list.at(i));
+            undo_move(board);
+        }
+        else if(IS_CAP(list_move))
+        {
+            ml.attacked ^= GET_BB(DST_CELL(list_move));
+        }
+    }
+
+    return ml;
+}
+
+/**
+    @brief Generates and returns a move list vector of all the possible
+           legal capture moves for the given board state.
+
+    @param board is the board to generate all legal capture moves for.
+
+    @return MoveList representing a collection of all legal capture
+            moves for the given board state.
+*/
+
+MoveList gen_legal_captures(Board& board)
+{
+    unsigned int list_move, list_size;
+
+    MoveList ml;
+    MoveList pseudo_moves = gen_captures(board);
+
+    ml.attacked = pseudo_moves.attacked;
+
+    list_size = pseudo_moves.list.size();
+
+    for(unsigned int i = 0; i < list_size; i++)
+    {
+        list_move = pseudo_moves.list.at(i).move;
+
+        if(make_move(board, list_move))
+        {
+            ml.list.push_back(pseudo_moves.list.at(i));
+            undo_move(board);
+        }
+        else
+        {
+            ml.attacked ^= GET_BB(DST_CELL(list_move));
+        }
+    }
 
     return ml;
 }

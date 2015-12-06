@@ -17,33 +17,56 @@
     * 02/12/2015 0.1.2 Added null move pruning.
 */
 
+/**
+    @file
+    @filename search.h
+    @author Shreyas Vinod
+
+    @brief The heart of the alpha-beta algorithm that makes computer
+           chess possible.
+
+    Includes structures and functions to effectively search and deduce the
+    best possible move for a given position using the alpha-beta algorithm.
+*/
+
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include "debug.h"
+#include "defs.h"
 
 #include "board.h"
 #include "chronos.h" // Time and get_time_diff()
-#include "defs.h"
 
 // Structures
 
 /**
+    @struct SearchInfo
+
     @brief Holds a bunch of information that's helpful while searching.
 
-    @var start_time is the time the search began.
-    @var move_time is the maximum amount of time the search should take in
-         milliseconds.
-    @var depth is the total depth to search to.
-    @var moves_to_go is the number of moves to go, for time control.
-    @var nodes is the number of nodes searched so far.
-    @var depth_set denotes whether a maximum depth has been set.
-    @var time_set denotes whether maximum time has been set.
-    @var stopped denotes whether an interrupt was acknowledged, where the search
-         should be interrupted.
-    @var quit denotes whether to quit the program.
-    @var fh stands for 'fail-high', used for move ordering statistics.
-    @var fhf stands for 'fail-high-first', used for move ordering statistics.
+    @var SearchInfo::start_time
+         The time the search began.
+    @var SearchInfo::move_time
+         The maximum amount of time the search should take in milliseconds.
+    @var SearchInfo::depth
+         The total depth to search to.
+    @var SearchInfo::moves_to_go
+         The number of moves to go, for time control.
+    @var SearchInfo::nodes
+         The number of nodes searched so far.
+    @var SearchInfo::depth_set
+         Denotes whether a maximum depth has been set.
+    @var SearchInfo::time_set
+         Denotes whether maximum time has been set.
+    @var SearchInfo::stopped
+         Denotes whether an interrupt was acknowledged, where the search should
+         be interrupted.
+    @var SearchInfo::quit
+         Denotes whether to quit the program.
+    @var SearchInfo::fh
+         Stands for 'fail-high', used for move ordering statistics.
+    @var SearchInfo::fhf
+         Stands for 'fail-high-first', used for move ordering statistics.
 */
 
 struct SearchInfo
@@ -70,7 +93,7 @@ struct SearchInfo
     {}
 };
 
-// External function definitions
+// External function declarations
 
 // Iterative deepening implementation.
 

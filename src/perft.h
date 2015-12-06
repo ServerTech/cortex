@@ -11,15 +11,22 @@
     * 23/11/2015 0.1.0 Initial version.
 */
 
+/**
+    @file
+    @filename perft.h
+    @author Shreyas Vinod
+
+    @brief Performs basic perft testing on the move generator.
+*/
+
 #ifndef PERFT_H
 #define PERFT_H
 
-#include "debug.h"
-
-#include "board.h"
 #include "defs.h"
 
-// External function definitions
+#include "board.h"
+
+// External function declarations
 
 // Perform perft without any printing.
 

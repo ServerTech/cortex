@@ -12,14 +12,21 @@
     * 15/11/2015 0.1.0 Initial version.
 */
 
+/**
+    @file
+    @filename move.h
+    @author Shreyas Vinod
+
+    @brief Keeps key structures for handling moves, especially during move
+           generation.
+*/
+
 #ifndef MOVE_H
 #define MOVE_H
 
-#include "debug.h"
-
-#include <string> // std::string and std::to_string()
-
 #include "defs.h"
+
+#include <string> // std::string and std::to_string()HO
 
 // Globals
 
@@ -30,16 +37,19 @@ extern const unsigned int MFLAGCA; // Castling flag mask.
 // Structures
 
 /**
+    @struct Move
+
     @brief Holds a representation of a move.
 
     The Move structure holds all the information required to describe a move
     in a memory-efficient manner. It also includes a score variable to help
     with move ordering for optimal search.
 
-    @var move is an integer representation of a move. A detailed description
-         of the representation can be found in the code comments.
-    @var score is the score value assigned by the move generation for move
-         ordering.
+    @var Move::move
+         An integer representation of a move. A detailed description of the
+         representation can be found in the code comments.
+    @var Move::score
+         The score value assigned by the move generation for move ordering.
 */
 
 /*

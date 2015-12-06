@@ -17,17 +17,33 @@
     * 02/12/2015 0.1.2 Added null move pruning.
 */
 
+/**
+    @file
+    @filename search.cpp
+    @author Shreyas Vinod
+
+    @brief The heart of the alpha-beta algorithm that makes computer
+           chess possible.
+
+    Includes structures and functions to effectively search and deduce the
+    best possible move for a given position using the alpha-beta algorithm.
+*/
+
+#include "defs.h"
+
 #include <iostream> // std::cout
 #include <algorithm> // std::sort()
 
 #include "search.h"
+#include "board.h"
 #include "move.h" // IS_CAP() and COORD_MOVE()
 #include "movegen.h"
 #include "evaluate.h"
 #include "hash_table.h"
+#include "chronos.h" // Time and get_time_diff()
 #include "misc.h"
 
-// Function Prototypes
+// Prototypes
 
 inline void check_up(SearchInfo& search_info);
 inline bool is_repetition(const Board& board);
@@ -37,7 +53,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     SearchInfo& search_info, bool do_null);
 void search(Board& board, SearchInfo& search_info);
 
-// Functions
+// Function definitions
 
 /**
     @brief Performs a check on whether the time for search has been
@@ -154,7 +170,7 @@ int quiescence(int alpha, int beta, Board& board, SearchInfo& search_info)
 
     unsigned int list_move, list_size;
 
-    MoveList ml = gen_capture_moves(board);
+    MoveList ml = gen_captures(board);
 
     list_size = ml.list.size();
 

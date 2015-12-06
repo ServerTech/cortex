@@ -15,14 +15,26 @@
     * 03/12/2015 0.1.1 Updated to a full transposition table.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename hash_table.cpp
+    @author Shreyas Vinod
 
+    @brief Handles hash tables for efficient move searching.
+
+    Includes functions that help create and manage dynamic hash
+    tables for improving move search efficiency.
+*/
+
+#include "defs.h"
+
+#include <new> // ::operator new
 #include <assert.h> // std::assert()
 
 #include "hash_table.h"
 #include "movegen.h"
 
-// Function Prototypes
+// Prototypes
 
 void init_table(TranspositionTable& t_table, unsigned int t_size);
 void free_table(TranspositionTable& t_table);
@@ -35,7 +47,7 @@ bool probe_table(TranspositionTable& t_table, unsigned int ply,
     int alpha, int beta);
 unsigned int probe_pv_table(TranspositionTable& t_table, uint64 hash_key);
 
-// Functions
+// Function definitions
 
 /**
     @brief Initialises memory for a transposition table. Everything is zeroed.

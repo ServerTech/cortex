@@ -12,25 +12,37 @@
     * 02/12/2015 0.1.0 Initial version.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename uci.h
+    @author Shreyas Vinod
+
+    @brief Includes everything needed to support the UCI
+           (Universal Chess Interface) protocol.
+*/
+
+#include "defs.h"
 
 #include <iostream>
+#include <string> // std::string
 #include <sstream> // std::stringstream
 
 #include "uci.h"
+#include "board.h"
+#include "search.h"
 #include "hash_table.h"
 #include "chronos.h"
 
 #define FEN_START "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-// Function Prototypes
+// Prototypes
 
 void uci_loop();
 bool parse_uci_position(const std::string& cmd, Board& board);
 void parse_uci_go(const std::string& cmd, SearchInfo& search_info,
     Board& board);
 
-// Functions
+// Function definitions
 
 /**
     @brief UCI infinite loop to listen for commands from UCI protocol

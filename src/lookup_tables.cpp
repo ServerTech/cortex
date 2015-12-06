@@ -13,7 +13,16 @@
     * 15/11/2015 0.1.2 Names are now more generic.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename lookup_tables.cpp
+    @author Shreyas Vinod
+
+    @brief A collection of pre-calculated lookup tables for move generation.
+           Based on Little-Endian Rank-File mapping (LERF).
+*/
+
+#include "defs.h"
 
 #include "lookup_tables.h"
 

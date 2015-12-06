@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.6
+    @version 0.4.8
 
     @brief Handles the board representation for the engine.
 
@@ -63,36 +63,56 @@
         * Added undo_null_move(Board&).
     * 02/12/2015 0.4.5 Added transposition table.
     * 04/12/2015 0.4.6 Added FEN parsing for fifty move and ply counters.
+    * 06/12/2015 0.4.7 Added board_flipv(Board&).
+    * 06/12/2015 0.4.8 pretty_board(Board&) now prints evaluation score.
+*/
+
+/**
+    @file
+    @filename board.h
+    @author Shreyas Vinod
+
+    @brief Handles the board representation for the engine.
+
+    Extensive board handling with a bitboard representation. Can be initialised
+    with a FEN (Forsyth–Edwards Notation) string. Keeps track of moves,
+    en passant squares, castling permissions, move history, and more. Based on
+    Little-Endian Rank-File mapping (LERF).
 */
 
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "debug.h"
+#include "defs.h"
 
 #include <string> // std::string
 #include <vector> // std::vector
 
 #include "hash_table.h"
-#include "defs.h"
 
 // Structures
 
 /**
+    @struct UndoMove
+
     @brief Structure to help undo a move.
 
     This structure holds enough information to be able to correctly undo a
     move that is made.
 
-    @var move is an integer representation of the move that was made.
-    @var castle_perm represents the castling permissions before the move
+    @var UndoMove::move
+         An integer representation of the move that was made.
+    @var UndoMove::castle_perm
+         Represents the castling permissions before the move was made.
+    @var UndoMove::en_pas_sq
+         Represents the LERF index of the en passant cell, before the move was
+         made.
+    @var UndoMove::fifty
+         Counter value to keep track of the fifty-move rule, before the move
          was made.
-    @var en_pas_sq represents the LERF index of the en passant cell, before
-         the move was made.
-    @var fifty is the counter value to keep track of the fifty-move rule,
-         before the move was made.
-    @var hash_key is the 64-bit zobrist hash of the board position before
-         the move was made. Used to keep track of threefold repetition.
+    @var UndoMove::hash_key
+         The 64-bit zobrist hash of the board position before the move was
+         made. Used to keep track of threefold repetition.
 
     @warning 'en_pas_sq' or the en passant square should be set to value
              'NO_SQ' (64) when there is no en passant square.
@@ -119,31 +139,43 @@ struct UndoMove
 };
 
 /**
+    @struct Board
+
     @brief Board structure.
 
     This structure holds the entire game state at any given point in time.
     Refer to the code comments for detailed descriptions.
 
-    @var side is the side whose turn it is to play. Set to true if white.
-    @var ply is the number of half-moves in the current search.
-    @var his_ply is the number of half-moves in the history of the game.
-    @var castle_perm stores castling permissions for both sides efficiently.
-    @var en_pas_sq stores the en passant square, if any, or 'NO_SQ' (64)
-         otherwise.
-    @var fifty is a counter that helps keep track of the fifty-move rule.
-    @var hash_key is the zobrist 64-bit hash key for the current game state.
-         Used to keep track of threefold repetition.
-    @var history is a vector of 'UndoMove' structures to help with reverting
-         to a previous state, if necessary, which is mostly used in search
-         to unmake moves.
-    @var chessboard is 14 element array of 64-bit unsigned integers, each
-         storing the state of the board in bitboard representation, indexed
-         in standard convention.
-    @var t_table is the transposition hash table.
-    @var pv_array stores the current best PV line obtained from the PV hash
-         table.
-    @var search_history is an array used for the history heuristic.
-    @var search_killers is an array used for the killer heuristic.
+    @var Board::side
+         The side whose turn it is to play. Set to true if white.
+    @var Board::ply
+         The number of half-moves in the current search.
+    @var Board::his_ply
+         The number of half-moves in the history of the game.
+    @var Board::castle_perm
+         Stores castling permissions for both sides efficiently.
+    @var Board::en_pas_sq
+         Stores the en passant square, if any, or 'NO_SQ' (64) otherwise.
+    @var Board::fifty
+         A counter that helps keep track of the fifty-move rule.
+    @var Board::hash_key
+         The zobrist 64-bit hash key for the current game state. Used to keep
+         track of threefold repetition and in the transposition table.
+    @var Board::history
+         A vector of 'UndoMove' structures to help with reverting to a previous
+         state, if necessary, which is mostly used in search to unmake moves.
+    @var Board::chessboard
+         A 14 element array of 64-bit unsigned integers, each storing the state
+         of the board in bitboard representation, indexed in standard
+         convention.
+    @var Board::t_table
+         The transposition hash table.
+    @var Board::pv_array
+         Stores the current best PV line obtained from the transposition table.
+    @var Board::search_history
+         An array used for the history heuristic in move ordering.
+    @var Board::search_killers
+         An array used for the killer heuristic in move ordering.
 
     @warning Do NOT have more than king for each side. Although this is not
              checked, the consequence of having multiple kings is undefined for
@@ -278,7 +310,7 @@ inline void update_secondary(Board& board)
         board.chessboard[bB] | board.chessboard[bQ] | board.chessboard[bK];
 }
 
-// External function definitions
+// External function declarations
 
 extern void reset_board(Board& board); // Resets the board.
 
@@ -296,7 +328,7 @@ extern char conv_char(const Board& board, unsigned int index);
 
 // Returns a 'pretty' version of the board for standard output.
 
-extern std::string pretty_board(const Board& board);
+extern std::string pretty_board(Board& board);
 
 extern bool make_move(Board& board, unsigned int move); // Make a move.
 extern void undo_move(Board& board); // Unmake (undo) the previous move.
@@ -310,5 +342,9 @@ extern unsigned int parse_move(Board& board, std::string str_move);
 // Probe and fill the PV line array.
 
 extern unsigned int probe_pv_line(Board& board, unsigned int depth);
+
+// Flip board vertically for evaluation purposes.
+
+extern void board_flipv(Board& board);
 
 #endif // BOARD_H

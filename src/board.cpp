@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.cpp
     @author Shreyas Vinod
-    @version 0.4.6
+    @version 0.4.7
 
     @brief Handles the board representation for the engine.
 
@@ -63,17 +63,36 @@
         * Added undo_null_move(Board&).
     * 02/12/2015 0.4.5 Added transposition table.
     * 04/12/2015 0.4.6 Added FEN parsing for fifty move and ply counters.
+    * 06/12/2015 0.4.7 Added board_flipv(Board&).
+    * 06/12/2015 0.4.8 pretty_board(Board&) now prints evaluation score.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename board.cpp
+    @author Shreyas Vinod
 
+    @brief Handles the board representation for the engine.
+
+    Extensive board handling with a bitboard representation. Can be initialised
+    with a FEN (Forsyth–Edwards Notation) string. Keeps track of moves,
+    en passant squares, castling permissions, move history, and more. Based on
+    Little-Endian Rank-File mapping (LERF).
+*/
+
+#include "defs.h"
+
+#include <string> // std::string
+#include <vector> // std::vector
 #include <sstream> // std::stringstream
 #include <cctype> // isalpha() and isdigit()
 
 #include "board.h"
 #include "move.h" // COORD()
 #include "movegen.h" // is_sq_attacked()
+#include "evaluate.h" // static_eval()
 #include "hash.h" // gen_hash() and hash helper functions
+#include "hash_table.h"
 #include "lookup_tables.h" // Lookup tables
 
 // Prototypes
@@ -82,7 +101,7 @@ void reset_board(Board& board);
 bool parse_fen(Board& board, const std::string fen, unsigned int& i);
 unsigned int determine_type(const Board& board, uint64 bit_chk);
 char conv_char(const Board& board, unsigned int index);
-std::string pretty_board(const Board& board);
+std::string pretty_board(Board& board);
 inline void spawn_piece(Board& board, unsigned int piece_type,
     unsigned int index);
 inline void obliterate_piece(Board& board, unsigned int piece_type,
@@ -91,8 +110,6 @@ inline void move_piece_tu(Board& board, unsigned int dep_cell,
     unsigned int dst_cell);
 inline void move_piece_tk(Board& board, unsigned int piece_type,
     unsigned int dep_cell, unsigned int dst_cell);
-inline void move_piece_cap(Board& board, unsigned int piece_type,
-    unsigned int cap_type, unsigned int dep_cell, unsigned int dst_cell);
 bool make_move(Board& board, unsigned int move);
 void undo_move(Board& board);
 void make_null_move(Board& board);
@@ -100,8 +117,9 @@ void undo_null_move(Board& board);
 unsigned int parse_move(Board& board, std::string str_move);
 inline bool move_exists(Board& board, unsigned int move);
 unsigned int probe_pv_line(Board& board, unsigned int depth);
+void board_flipv(Board& board);
 
-// Functions
+// Function definitions
 
 /**
     @brief Resets the given board structure.
@@ -298,9 +316,9 @@ bool parse_fen(Board& board, const std::string fen, unsigned int& i)
         }
     }
 
-    board.hash_key = gen_hash(board); // Generate zobrist hash.
-
     update_secondary(board); // Update 'all white' and 'all black' boards.
+
+    board.hash_key = gen_hash(board); // Generate zobrist hash.
 
     return 1;
 }
@@ -401,7 +419,7 @@ char conv_char(const Board& board, unsigned int index)
             the box.
 */
 
-std::string pretty_board(const Board& board)
+std::string pretty_board(Board& board)
 {
     std::stringstream pretty_str;
     pretty_str << "8    ";
@@ -459,6 +477,10 @@ std::string pretty_board(const Board& board)
     // Fifty-move rule counter
 
     pretty_str << "Fifty-move rule counter: " << board.fifty << "\n";
+
+    // Static evaluation
+
+    pretty_str << "Static evaluation: " << static_eval(board) << std::endl;
 
     // Zobrist hash
 
@@ -1148,4 +1170,65 @@ unsigned int probe_pv_line(Board& board, unsigned int depth)
     while(board.ply > 0) undo_move(board);
 
     return count;
+}
+
+/**
+    @brief Flips the board vertically for evaluation purposes. This function
+           also swaps the pieces with a piece of the opposite colour.
+
+    @param board is the board to flip vertically.
+
+    @return void.
+
+    @warning Pieces are swapped with the same type of piece of the opposite
+             colour.
+    @warning Do not try to search with a flipped board. Every search
+             specific feature of the board like the transposition table
+             or the move ordering heuristic arrays are not flipped in
+             any way.
+*/
+
+void board_flipv(Board& board)
+{
+    // Flip castling permissions.
+
+    unsigned int temp_castleperm = 0;
+
+    if(board.castle_perm & WKCA) temp_castleperm |= BKCA;
+    if(board.castle_perm & WQCA) temp_castleperm |= BQCA;
+    if(board.castle_perm & BKCA) temp_castleperm |= WKCA;
+    if(board.castle_perm & BQCA) temp_castleperm |= WQCA;
+
+    board.castle_perm = temp_castleperm;
+
+    // Flip en passant square.
+
+    if(board.en_pas_sq != NO_SQ) board.en_pas_sq = FLIPV[board.en_pas_sq];
+
+    // Swap pieces.
+
+    uint64 temp_white_chessboard[6];
+
+    for(unsigned int i = wP; i <= wK; i++)
+    {
+        temp_white_chessboard[i] = board.chessboard[i];
+    }
+
+    for(unsigned int i = wP; i <= wK; i++)
+    {
+        board.chessboard[i] = FLIPV_BB(board.chessboard[bP + i]);
+    }
+
+    for(unsigned int i = bP; i <= bK; i++)
+    {
+        board.chessboard[i] = FLIPV_BB(temp_white_chessboard[i - bP]);
+    }
+
+    // Swap sides.
+
+    board.side = !board.side;
+
+    update_secondary(board); // Update 'all white' and 'all black' boards.
+
+    board.hash_key = gen_hash(board); // Generate zobrist hash.
 }

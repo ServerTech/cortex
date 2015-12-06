@@ -13,12 +13,19 @@
     * 15/11/2015 0.1.2 Names are now more generic.
 */
 
+/**
+    @file
+    @filename lookup_tables.h
+    @author Shreyas Vinod
+
+    @brief A collection of pre-calculated lookup tables for move generation.
+           Based on Little-Endian Rank-File mapping (LERF).
+*/
+
 #ifndef LOOKUP_TABLES_H
 #define LOOKUP_TABLES_H
 
-#include "debug.h"
-
-#include "defs.h" // uint64
+#include "defs.h"
 
 // Globals
 

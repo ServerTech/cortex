@@ -15,12 +15,19 @@
     * 03/12/2015 0.1.1 Updated to a full transposition table.
 */
 
+/**
+    @file
+    @filename hash_table.h
+    @author Shreyas Vinod
+
+    @brief Handles hash tables for efficient move searching.
+
+    Includes functions that help create and manage dynamic hash
+    tables for improving move search efficiency.
+*/
+
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
-
-#include "debug.h"
-
-#include <new> // ::operator new
 
 #include "defs.h"
 
@@ -31,14 +38,21 @@ enum { TFALPHA = 1, TFBETA, TFEXACT }; // Flags
 // Structures
 
 /**
+    @struct TableEntry
+
     @brief Holds a bunch of information about previous searches, to be inserted
            into the transposition table for future use.
 
-    @var hash_key is the zobrist hash of the board.
-    @var move is the move made on the board.
-    @var score is the evaluation of the board for the given move.
-    @var depth is the depth this particular game state was evaluated to.
-    @var flag represents one of three flags: TFALPHA; TFBETA; TFEXACT.
+    @var TableEntry::hash_key
+         The zobrist hash of the board.
+    @var TableEntry::move
+         The move made on the board.
+    @var TableEntry::score
+         The evaluation of the board for the given move.
+    @var TableEntry::depth
+         The depth this particular game state was evaluated to.
+    @var TableEntry::flag
+         Represents one of three flags: TFALPHA; TFBETA; TFEXACT.
 */
 
 struct TableEntry
@@ -60,10 +74,14 @@ struct TableEntry
 };
 
 /**
+    @struct TranspositionTable
+
     @brief Stores a bunch of table entries for the transposition table.
 
-    @var t_entry is the t_entry array, which is dynamically allocated.
-    @var num_entries is the number of entries in the array.
+    @var TranspositionTable::t_entry
+         The t_entry array, which is dynamically allocated.
+    @var TranspositionTable::num_entries
+         The number of entries in the array.
 
     @warning Memory must be initialised.
     @warning num_entries musn't be changed after initialisation. If it is,
@@ -80,7 +98,7 @@ struct TranspositionTable
     {}
 };
 
-// External function definitions
+// External function declarations
 
 // Initialise hash table.
 

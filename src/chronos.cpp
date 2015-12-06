@@ -4,23 +4,34 @@
     @author Shreyas Vinod
     @version 0.1.0
 
-    @brief A few functions to keep track of time.
+    @brief A few functions to keep track of time. Requires the Boost C++
+           libraries.
 
     ******************** VERSION CONTROL ********************
     * 02/12/2015 File created.
     * 02/12/2015 0.1.0 Initial version.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename chronos.cpp
+    @author Shreyas Vinod
+
+    @brief A few functions to keep track of time.
+*/
+
+#include "defs.h"
+
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 #include "chronos.h"
 
-// Function prototypes
+// Prototypes
 
 Time get_cur_time();
 uint64 get_time_diff(Time t);
 
-// Functions
+// Function definitions
 
 /**
     @brief Returns the current time.

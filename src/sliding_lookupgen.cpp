@@ -18,6 +18,19 @@
                        to prevent collisions with the C's 'FILE'.
 */
 
+/**
+    @file
+    @filename sliding_lookupgen.cpp
+    @author Shreyas Vinod
+
+    @brief Generates well-formatted files with lookup tables for sliding
+           pieces.
+
+    Generates and dumps sliding piece (queen, bishop and rook) lookup tables
+    into well-formatted text files. These values are later used in the
+    move generator. Based on Little-Endian Rank-File mapping (LERF).
+*/
+
 #include <fstream>
 #include <iomanip>
 

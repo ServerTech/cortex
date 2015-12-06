@@ -12,7 +12,16 @@
     * 15/11/2015 0.1.0 Initial version.
 */
 
-#include "debug.h"
+/**
+    @file
+    @filename move.cpp
+    @author Shreyas Vinod
+
+    @brief Keeps key structures for handling moves, especially during move
+           generation.
+*/
+
+#include "defs.h"
 
 #include "move.h"
 

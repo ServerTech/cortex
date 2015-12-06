@@ -12,18 +12,26 @@
     * 02/12/2015 0.1.0 Initial version.
 */
 
+/**
+    @file
+    @filename chronos.h
+    @author Shreyas Vinod
+
+    @brief A few functions to keep track of time. Requires the Boost C++
+           libraries.
+*/
+
 #ifndef CHRONOS_H
 #define CHRONOS_H
 
-#include "debug.h"
+#include "defs.h"
 
 #include "boost/date_time/posix_time/posix_time.hpp"
-#include "defs.h"
 
 typedef boost::posix_time::ptime Time;
 typedef boost::posix_time::time_duration TimeDuration;
 
-// External function definitions
+// External function declarations
 
 extern Time get_cur_time(); // Gets the current time.
 extern uint64 get_time_diff(Time t); // Calculates the time difference.

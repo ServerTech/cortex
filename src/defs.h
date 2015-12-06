@@ -1,8 +1,8 @@
 /*
     Cortex - Self-learning Chess Engine
-    @B_FILEname defs.h
+    @filename defs.h
     @author Shreyas Vinod
-    @version 0.1.3
+    @version 0.1.5
 
     @brief Holds definitions for code readability and speed improvements.
 
@@ -14,12 +14,24 @@
     * 13/11/2015 0.1.2 Added bit manipulation functions.
     * 25/11/2015 0.1.3 Added NO_MOVE.
     * 28/11/2015 0.1.4 Added MAX_DEPTH.
+    * 06/12/2015 0.1.5 Added FLIPV[64] and FLIPV_BB.
+*/
+
+/**
+    @file
+    @filename defs.h
+    @author Shreyas Vinod
+
+    @brief Holds definitions for code readability and speed improvements.
 */
 
 #ifndef DEFS_H
 #define DEFS_H
 
-#include "debug.h"
+// Compile settings
+
+// #define NDEBUG // Disabled assert() if defined.
+// #define WIN32 // Uncomment if compiling for Windows.
 
 #include <string> // std::string
 #include <assert.h> // std::assert()
@@ -67,6 +79,17 @@ const uint64 B_RANK[9] = {
     0x0000000000000000ULL, 0x00000000000000ffULL, 0x000000000000ff00ULL,
     0x0000000000ff0000ULL, 0x00000000ff000000ULL, 0x000000ff00000000ULL,
     0x0000ff0000000000ULL, 0x00ff000000000000ULL, 0xff00000000000000ULL
+};
+
+const int FLIPV[64] = {
+56  ,   57  ,   58  ,   59  ,   60  ,   61  ,   62  ,   63  ,
+48  ,   49  ,   50  ,   51  ,   52  ,   53  ,   54  ,   55  ,
+40  ,   41  ,   42  ,   43  ,   44  ,   45  ,   46  ,   47  ,
+32  ,   33  ,   34  ,   35  ,   36  ,   37  ,   38  ,   39  ,
+24  ,   25  ,   26  ,   27  ,   28  ,   29  ,   30  ,   31  ,
+16  ,   17  ,   18  ,   19  ,   20  ,   21  ,   22  ,   23  ,
+8   ,   9   ,   10  ,   11  ,   12  ,   13  ,   14  ,   15  ,
+0   ,   1   ,   2   ,   3   ,   4   ,   5   ,   6   ,   7
 };
 
 // Bit manipulation helper functions
@@ -166,6 +189,26 @@ inline unsigned int POP_BIT(uint64& bb)
     unsigned int index = __builtin_ffsll(bb) - 1;
     bb ^= GET_BB(index);
     return index;
+}
+
+/**
+    @brief Flips the given bitboard vertically.
+
+    @param bb is the unsigned integer (bitboard) to flip vertically.
+
+    @return uint64 value representing the vertically flipped bitboard.
+*/
+
+inline uint64 FLIPV_BB(uint64 bb)
+{
+    return  ((bb << 56)                        ) |
+            ((bb << 40) & 0x00ff000000000000ULL) |
+            ((bb << 24) & 0x0000ff0000000000ULL) |
+            ((bb <<  8) & 0x000000ff00000000ULL) |
+            ((bb >>  8) & 0x00000000ff000000ULL) |
+            ((bb >> 24) & 0x0000000000ff0000ULL) |
+            ((bb >> 40) & 0x000000000000ff00ULL) |
+            ((bb >> 56) );
 }
 
 /**
