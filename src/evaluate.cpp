@@ -11,7 +11,7 @@
     * 28/11/2015 File created.
     * 29/11/2015 0.1.0 Initial version.
     * 06/12/2015 0.1.1 Added checks for isolated and passed pawns.
-    * 06/12/2015 0.1.2 Added checks of open/half-open files and mobility bonus.
+    * 06/12/2015 0.1.2 Added checks of open/half-open files.
 */
 
 /**
@@ -40,13 +40,9 @@ int S_KNIGHT = 315;
 int S_BISHOP = 300;
 int S_PAWN = 100;
 
-// Mobility bonuses
+// Global values
 
-int S_QUEEN_MOBILITY = 5;
-int S_ROOK_MOBILITY = 5;
-int S_KNIGHT_MOBILITY = 5;
-int S_BISHOP_MOBILITY = 5;
-int S_PAWN_MOBILITY = 5;
+int S_MOBILITY = 10;
 
 // Queens
 
@@ -240,11 +236,6 @@ int static_eval(Board& board)
             score += S_QUEEN_OPENFILE;
         else if((board.chessboard[wP] & file) == 0) // Half-open file
             score += S_QUEEN_HALFOPENFILE;
-
-        MoveList ml;
-        gen_rook_moves(board.chessboard[wQ], WHITE, ml, board);
-        gen_bishop_moves(board.chessboard[wQ], WHITE, ml, board);
-        score += ml.list.size() * S_QUEEN_MOBILITY; // Mobility bonus
     }
 
     /************************* WHITE ROOKS *************************/
@@ -267,7 +258,7 @@ int static_eval(Board& board)
 
         MoveList ml;
         gen_rook_moves(board.chessboard[wR], WHITE, ml, board);
-        score += ml.list.size() * S_ROOK_MOBILITY; // Mobility bonus
+        score += ml.list.size() * S_MOBILITY; // Mobility bonus
     }
 
     /************************* WHITE KNIGHTS *************************/
@@ -279,10 +270,6 @@ int static_eval(Board& board)
     for(unsigned int i = 0; i < count; i++)
     {
         score += KNIGHT_ST[POP_BIT(piece_bb)]; // Piece-square table
-
-        MoveList ml;
-        gen_knight_moves(board.chessboard[wN], WHITE, ml, board);
-        score += ml.list.size() * S_KNIGHT_MOBILITY; // Mobility bonus
     }
 
     /************************* WHITE BISHOPS *************************/
@@ -294,10 +281,6 @@ int static_eval(Board& board)
     for(unsigned int i = 0; i < count; i++)
     {
         score += BISHOP_ST[POP_BIT(piece_bb)]; // Piece-square table
-
-        MoveList ml;
-        gen_bishop_moves(board.chessboard[wB], WHITE, ml, board);
-        score += ml.list.size() * S_BISHOP_MOBILITY; // Mobility bonus
     }
 
     /************************* WHITE PAWNS *************************/
@@ -319,10 +302,6 @@ int static_eval(Board& board)
             score += S_PAWN_PASSED[rank];
 
         score += PAWN_ST[index]; // Piece-square table
-
-        MoveList ml;
-        gen_pawn_moves(WHITE, ml, board);
-        score += ml.list.size() * S_PAWN_MOBILITY; // Mobility bonus
     }
 
     // Black
@@ -342,11 +321,6 @@ int static_eval(Board& board)
             score -= S_QUEEN_OPENFILE;
         else if((board.chessboard[bP] & file) == 0) // Half-open file
             score -= S_QUEEN_HALFOPENFILE;
-
-        MoveList ml;
-        gen_rook_moves(board.chessboard[bQ], BLACK, ml, board);
-        gen_bishop_moves(board.chessboard[bQ], BLACK, ml, board);
-        score -= ml.list.size() * S_QUEEN_MOBILITY; // Mobility bonus
     }
 
     /************************* BLACK ROOKS *************************/
@@ -366,10 +340,6 @@ int static_eval(Board& board)
             score -= S_ROOK_HALFOPENFILE;
 
         score -= ROOK_ST[FLIPV[index]]; // Piece-square table
-
-        MoveList ml;
-        gen_rook_moves(board.chessboard[bR], BLACK, ml, board);
-        score -= ml.list.size() * S_ROOK_MOBILITY; // Mobility bonus
     }
 
     /************************* BLACK KNIGHTS *************************/
@@ -381,10 +351,6 @@ int static_eval(Board& board)
     for(unsigned int i = 0; i < count; i++)
     {
         score -= KNIGHT_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
-
-        MoveList ml;
-        gen_knight_moves(board.chessboard[bN], BLACK, ml, board);
-        score -= ml.list.size() * S_KNIGHT_MOBILITY; // Mobility bonus
     }
 
     /************************* BLACK BISHOPS *************************/
@@ -396,10 +362,6 @@ int static_eval(Board& board)
     for(unsigned int i = 0; i < count; i++)
     {
         score -= BISHOP_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
-
-        MoveList ml;
-        gen_bishop_moves(board.chessboard[bB], BLACK, ml, board);
-        score -= ml.list.size() * S_BISHOP_MOBILITY; // Mobility bonus
     }
 
     /************************* BLACK PAWNS *************************/
@@ -421,10 +383,6 @@ int static_eval(Board& board)
             score -= S_PAWN_PASSED[9 - rank];
 
         score -= PAWN_ST[FLIPV[index]]; // Piece-square table
-
-        MoveList ml;
-        gen_pawn_moves(BLACK, ml, board);
-        score -= ml.list.size() * S_PAWN_MOBILITY; // Mobility bonus
     }
 
     if(board.side == WHITE) return score;

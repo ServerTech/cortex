@@ -65,7 +65,7 @@ struct MoveList
     MoveList()
     :list(), attacked(0ULL)
     {
-        list.reserve(128); // Reserve enough memory for 128 moves.
+        list.reserve(64); // Reserve enough memory for 64 moves.
     };
 };
 

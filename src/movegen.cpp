@@ -2209,6 +2209,8 @@ MoveList gen_captures(const Board& board)
 
     @return MoveList representing a collection of all legal moves for
             the given board state.
+
+    @warning The 'attacked' bitboard inside the bitboard is not calculated.
 */
 
 MoveList gen_legal_moves(Board& board)
@@ -2218,24 +2220,13 @@ MoveList gen_legal_moves(Board& board)
     MoveList ml;
     MoveList pseudo_moves = gen_moves(board);
 
-    ml.attacked = pseudo_moves.attacked;
-
     list_size = pseudo_moves.list.size();
 
     for(unsigned int i = 0; i < list_size; i++)
     {
         list_move = pseudo_moves.list.at(i).move;
 
-        if(!make_move(board, list_move))
-        {
-            if(IS_CAP(list_move))
-            {
-                ml.attacked ^= GET_BB(DST_CELL(list_move));
-            }
-
-            continue;
-        }
-
+        if(!make_move(board, list_move)) continue;
         undo_move(board);
         ml.list.push_back(pseudo_moves.list.at(i));
     }
@@ -2251,6 +2242,8 @@ MoveList gen_legal_moves(Board& board)
 
     @return MoveList representing a collection of all legal capture
             moves for the given board state.
+
+    @warning The 'attacked' bitboard inside the bitboard is not calculated.
 */
 
 MoveList gen_legal_captures(Board& board)
@@ -2260,20 +2253,13 @@ MoveList gen_legal_captures(Board& board)
     MoveList ml;
     MoveList pseudo_moves = gen_captures(board);
 
-    ml.attacked = pseudo_moves.attacked;
-
     list_size = pseudo_moves.list.size();
 
     for(unsigned int i = 0; i < list_size; i++)
     {
         list_move = pseudo_moves.list.at(i).move;
 
-        if(!make_move(board, list_move))
-        {
-            ml.attacked ^= GET_BB(DST_CELL(list_move));
-            continue;
-        }
-
+        if(!make_move(board, list_move)) continue;
         undo_move(board);
         ml.list.push_back(pseudo_moves.list.at(i));
     }
