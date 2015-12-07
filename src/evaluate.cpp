@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename evaluate.cpp
     @author Anna Grygierzec
-    @version 0.1.0
+    @version 0.1.2
 
     @brief Static evaluation function that returns an objective score
            of the game state.
@@ -10,6 +10,8 @@
     ******************** VERSION CONTROL ********************
     * 28/11/2015 File created.
     * 29/11/2015 0.1.0 Initial version.
+    * 06/12/2015 0.1.1 Added checks for isolated and passed pawns.
+    * 06/12/2015 0.1.2 Added checks of open/half-open files and mobility bonus.
 */
 
 /**
@@ -25,8 +27,43 @@
 
 #include "evaluate.h"
 #include "board.h"
+#include "movegen.h"
+#include "hash.h"
 
 // Globals
+
+// Piece values
+
+int S_QUEEN = 900;
+int S_ROOK = 500;
+int S_KNIGHT = 315;
+int S_BISHOP = 300;
+int S_PAWN = 100;
+
+// Global values
+
+int S_MOBILITY = 10;
+
+// Queens
+
+int S_QUEEN_OPENFILE = 5;
+int S_QUEEN_HALFOPENFILE = 3;
+
+// Rooks
+
+int S_ROOK_OPENFILE = 10;
+int S_ROOK_HALFOPENFILE = 5;
+
+// Pawns
+
+const int S_PAWN_ISOLATED = -10;
+const int S_PAWN_PASSED[9] = { 0, 0, 5, 10, 20, 35, 60, 100, 0 };
+
+uint64 PAWN_ISO_MASK[64]; // Isolated pawn mask.
+uint64 PAWN_WPAS_MASK[64]; // White passed pawn mask.
+uint64 PAWN_BPAS_MASK[64]; // Black passed pawn mask.
+
+// Piece-square tables
 
 const int ROOK_ST[64] = {
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
@@ -74,9 +111,89 @@ const int PAWN_ST[64] = {
 
 // Prototypes
 
+void init_evalmasks();
 int static_eval(Board& board);
 
 // Function definitions
+
+/**
+    @brief Initialises all bitmasks required for evaluation.
+
+    @return void.
+*/
+
+void init_evalmasks()
+{
+    for(unsigned int i = 0; i < 64; i++)
+    {
+        PAWN_ISO_MASK[i] = 0ULL;
+        PAWN_WPAS_MASK[i] = 0ULL;
+        PAWN_BPAS_MASK[i] = 0ULL;
+    }
+
+    for(int i = 0; i < 64; i++)
+    {
+        int sq = i + 8, file;
+
+        while(sq < 64)
+        {
+            PAWN_WPAS_MASK[i] |= GET_BB(sq);
+            sq += 8;
+        }
+
+        sq = i - 8;
+
+        while(sq >= 0)
+        {
+            PAWN_BPAS_MASK[i] |= GET_BB(sq);
+            sq -= 8;
+        }
+
+        file = GET_FILE(i);
+
+        if(file > FILE_A)
+        {
+            PAWN_ISO_MASK[i] |= B_FILE[file - 1];
+
+            sq = i + 7;
+
+            while(sq < 64)
+            {
+                PAWN_WPAS_MASK[i] |= GET_BB(sq);
+                sq += 8;
+            }
+
+            sq = i - 9;
+
+            while(sq >= 0)
+            {
+                PAWN_BPAS_MASK[i] |= GET_BB(sq);
+                sq -= 8;
+            }
+        }
+
+        if(file < FILE_H)
+        {
+            PAWN_ISO_MASK[i] |= B_FILE[file + 1];
+
+            sq = i + 9;
+
+            while(sq < 64)
+            {
+                PAWN_WPAS_MASK[i] |= GET_BB(sq);
+                sq += 8;
+            }
+
+            sq = i - 7;
+
+            while(sq >= 0)
+            {
+                PAWN_BPAS_MASK[i] |= GET_BB(sq);
+                sq -= 8;
+            }
+        }
+    }
+}
 
 /**
     @brief Performs a static evaluation of the given board state and deduces
@@ -90,131 +207,178 @@ int static_eval(Board& board);
              relative to each side. A higher score is always better, for the
              side given by the 'side' variable in 'board'.
     @warning Assumes exactly one king exists.
+    @warning Pawms musn't exist on ranks 1 or 8 (promotion ranks).
 */
 
 int static_eval(Board& board)
 {
     int score = 0;
 
-    unsigned int uint_1; // Temporary variables.
-    uint64 u64_1; // Temporary variables.
-/*
-    // White's material
+    uint64 pawns_bb = board.chessboard[wP] | board.chessboard[bP];
 
-    score += CNT_BITS(board.chessboard[wQ]) * 900; // White queens
-    score += CNT_BITS(board.chessboard[wR]) * 500; // White rooks
-    score += CNT_BITS(board.chessboard[wK]) * 315; // White knights
-    score += CNT_BITS(board.chessboard[wB]) * 300; // White bishops
-    score += CNT_BITS(board.chessboard[wP]) * 100; // White pawns
-
-    // Black's material
-
-    score -= CNT_BITS(board.chessboard[bQ]) * 900; // Black queens
-    score -= CNT_BITS(board.chessboard[bR]) * 500; // Black rooks
-    score -= CNT_BITS(board.chessboard[bK]) * 315; // Black knights
-    score -= CNT_BITS(board.chessboard[bB]) * 300; // Black bishops
-    score -= CNT_BITS(board.chessboard[bP]) * 100; // Black pawns
-*/
-    // Piece-square tables
+    unsigned int count, index, file, rank; // Temporary variables.
+    uint64 piece_bb; // Temporary variable.
 
     // White
 
-    // White Queens
+    /************************* WHITE QUEENS *************************/
 
-    score += CNT_BITS(board.chessboard[wQ]) * 900;
+    piece_bb = board.chessboard[wQ];
+    count = CNT_BITS(piece_bb);
+    score += count * S_QUEEN; // Material score
 
-    // White rooks
-
-    u64_1 = board.chessboard[wR];
-    uint_1 = CNT_BITS(u64_1);
-    score += uint_1 * 500; // Material score
-
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score += ROOK_ST[POP_BIT(u64_1)];
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
+
+        if((pawns_bb & file) == 0) // Open file
+            score += S_QUEEN_OPENFILE;
+        else if((board.chessboard[wP] & file) == 0) // Half-open file
+            score += S_QUEEN_HALFOPENFILE;
     }
 
-    // White knights
+    /************************* WHITE ROOKS *************************/
 
-    u64_1 = board.chessboard[wN];
-    uint_1 = CNT_BITS(u64_1);
-    score += uint_1 * 315; // Material score
+    piece_bb = board.chessboard[wR];
+    count = CNT_BITS(piece_bb);
+    score += count * S_ROOK; // Material score
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score += KNIGHT_ST[POP_BIT(u64_1)];
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
+
+        if((pawns_bb & file) == 0) // Open file
+            score += S_ROOK_OPENFILE;
+        else if((board.chessboard[wP] & file) == 0) // Half-open file
+            score += S_ROOK_HALFOPENFILE;
+
+        score += ROOK_ST[index]; // Piece-square table
     }
 
-    // White bishops
+    /************************* WHITE KNIGHTS *************************/
 
-    u64_1 = board.chessboard[wB];
-    uint_1 = CNT_BITS(u64_1);
-    score += uint_1 * 300; // Material score
+    piece_bb = board.chessboard[wN];
+    count = CNT_BITS(piece_bb);
+    score += count * S_KNIGHT; // Material score
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score += BISHOP_ST[POP_BIT(u64_1)];
+        score += KNIGHT_ST[POP_BIT(piece_bb)]; // Piece-square table
     }
 
-    // White pawns
+    /************************* WHITE BISHOPS *************************/
 
-    u64_1 = board.chessboard[wP];
-    uint_1 = CNT_BITS(u64_1);
-    score += uint_1 * 100; // Material score
+    piece_bb = board.chessboard[wB];
+    count = CNT_BITS(piece_bb);
+    score += count * S_BISHOP; // Material score
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score += PAWN_ST[POP_BIT(u64_1)];
+        score += BISHOP_ST[POP_BIT(piece_bb)]; // Piece-square table
+    }
+
+    /************************* WHITE PAWNS *************************/
+
+    piece_bb = board.chessboard[wP];
+    count = CNT_BITS(piece_bb);
+    score += count * S_PAWN; // Material score
+
+    for(unsigned int i = 0; i < count; i++)
+    {
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
+        rank = GET_RANK(index);
+
+        if(board.chessboard[wP] & PAWN_ISO_MASK[index]) // Isolated pawn
+            score += S_PAWN_ISOLATED;
+
+        if(board.chessboard[bP] & PAWN_WPAS_MASK[index]) // Passed pawn
+            score += S_PAWN_PASSED[rank];
+
+        score += PAWN_ST[index]; // Piece-square table
     }
 
     // Black
 
-    // Black Queens
+    /************************* BLACK QUEENS *************************/
 
-    score -= CNT_BITS(board.chessboard[bQ]) * 900;
+    piece_bb = board.chessboard[bQ];
+    count = CNT_BITS(piece_bb);
+    score -= count * S_QUEEN; // Material score
 
-    // Black rooks
-
-    u64_1 = board.chessboard[bR];
-    uint_1 = CNT_BITS(u64_1);
-    score -= uint_1 * 500; // Material score
-
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score -= ROOK_ST[FLIPV[POP_BIT(u64_1)]];
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
+
+        if((pawns_bb & file) == 0) // Open file
+            score -= S_QUEEN_OPENFILE;
+        else if((board.chessboard[bP] & file) == 0) // Half-open file
+            score -= S_QUEEN_HALFOPENFILE;
     }
 
-    // Black knights
+    /************************* BLACK ROOKS *************************/
 
-    u64_1 = board.chessboard[bN];
-    uint_1 = CNT_BITS(u64_1);
-    score -= uint_1 * 315; // Material score
+    piece_bb = board.chessboard[bR];
+    count = CNT_BITS(piece_bb);
+    score -= count * S_ROOK; // Material score
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score -= KNIGHT_ST[FLIPV[POP_BIT(u64_1)]];
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
+
+        if((pawns_bb & file) == 0) // Open file
+            score -= S_ROOK_OPENFILE;
+        else if((board.chessboard[bP] & file) == 0) // Half-open file
+            score -= S_ROOK_HALFOPENFILE;
+
+        score -= ROOK_ST[FLIPV[index]]; // Piece-square table
     }
 
-    // Black bishops
+    /************************* BLACK KNIGHTS *************************/
 
-    u64_1 = board.chessboard[bB];
-    uint_1 = CNT_BITS(u64_1);
-    score -= uint_1 * 300; // Material score
+    piece_bb = board.chessboard[bN];
+    count = CNT_BITS(piece_bb);
+    score -= count * S_KNIGHT; // Material score
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score -= BISHOP_ST[FLIPV[POP_BIT(u64_1)]];
+        score -= KNIGHT_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
     }
 
-    // Black pawns
+    /************************* BLACK BISHOPS *************************/
 
-    u64_1 = board.chessboard[bP];
-    uint_1 = CNT_BITS(u64_1);
-    score -= uint_1 * 100; // Material score
+    piece_bb = board.chessboard[bB];
+    count = CNT_BITS(piece_bb);
+    score -= count * S_BISHOP; // Material score
 
-    for(unsigned int i = 0; i < uint_1; i++)
+    for(unsigned int i = 0; i < count; i++)
     {
-        score -= PAWN_ST[FLIPV[POP_BIT(u64_1)]];
+        score -= BISHOP_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
+    }
+
+    /************************* BLACK PAWNS *************************/
+
+    piece_bb = board.chessboard[bP];
+    count = CNT_BITS(piece_bb);
+    score -= count * S_PAWN; // Material score
+
+    for(unsigned int i = 0; i < count; i++)
+    {
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
+        rank = GET_RANK(index);
+
+        if(board.chessboard[bP] & PAWN_ISO_MASK[index]) // Isolated pawn
+            score -= S_PAWN_ISOLATED;
+
+        if(board.chessboard[wP] & PAWN_BPAS_MASK[index]) // Passed pawn
+            score -= S_PAWN_PASSED[9 - rank];
+
+        score -= PAWN_ST[FLIPV[index]]; // Piece-square table
     }
 
     if(board.side == WHITE) return score;

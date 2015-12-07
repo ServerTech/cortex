@@ -2226,15 +2226,18 @@ MoveList gen_legal_moves(Board& board)
     {
         list_move = pseudo_moves.list.at(i).move;
 
-        if(make_move(board, list_move))
+        if(!make_move(board, list_move))
         {
-            ml.list.push_back(pseudo_moves.list.at(i));
-            undo_move(board);
+            if(IS_CAP(list_move))
+            {
+                ml.attacked ^= GET_BB(DST_CELL(list_move));
+            }
+
+            continue;
         }
-        else if(IS_CAP(list_move))
-        {
-            ml.attacked ^= GET_BB(DST_CELL(list_move));
-        }
+
+        undo_move(board);
+        ml.list.push_back(pseudo_moves.list.at(i));
     }
 
     return ml;
@@ -2265,15 +2268,14 @@ MoveList gen_legal_captures(Board& board)
     {
         list_move = pseudo_moves.list.at(i).move;
 
-        if(make_move(board, list_move))
-        {
-            ml.list.push_back(pseudo_moves.list.at(i));
-            undo_move(board);
-        }
-        else
+        if(!make_move(board, list_move))
         {
             ml.attacked ^= GET_BB(DST_CELL(list_move));
+            continue;
         }
+
+        undo_move(board);
+        ml.list.push_back(pseudo_moves.list.at(i));
     }
 
     return ml;

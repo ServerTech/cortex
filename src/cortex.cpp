@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename main.cpp
     @author Shreyas Vinod, Anna Grygierzec
-    @version 0.1.1
+    @version 0.1.2
 
     @brief Holds the main function, which lets the user select between
            command line mode and UCI mode.
@@ -11,6 +11,7 @@
     * xx/06/2015 File created.
     * 02/12/2015 0.1.0 Added this bit.
     * 03/12/2015 0.1.1 Added UCI support.
+    * 07/12/2015 0.1.2 Added evaluation testing.
 */
 
 /**
@@ -69,8 +70,11 @@ int main()
 
     std::string usr_cmd;
 
+    // Initialise various aspects of the engine.
+
     init_hash();
     init_mvv_lva();
+    init_evalmasks();
 
     std::cout << "Hi, I'm Cortex." << std::endl;
     std::cout << "What mode would you like to enter? ";
@@ -144,10 +148,21 @@ int main()
             search(board, search_info);
             std::cout << std::endl;
         }
+        else if(usr_cmd == "legal")
+        {
+            MoveList ml = gen_legal_moves(board);
+            std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
+        }
         else if(usr_cmd == "pseudo")
         {
             MoveList ml = gen_moves(board);
             std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
+        }
+        else if(usr_cmd == "attacked")
+        {
+            MoveList ml = gen_captures(board);
+            std::cout << pretty_bitboard(ml.attacked) << std::endl <<
+                std::endl;
         }
         else if(usr_cmd == "perft")
         {
@@ -210,14 +225,6 @@ int main()
             }
 
             std::cout << std::endl << std::endl;
-        }
-        else if(usr_cmd == "flipv")
-        {
-            board_flipv(board);
-            std::cout <<
-                "Please do not move/undo/search on a flipped board." <<
-                std::endl << std::endl;
-            std::cout << pretty_board(board) << std::endl << std::endl;
         }
         else if(usr_cmd == "cleartable")
         {

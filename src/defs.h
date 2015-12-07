@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename defs.h
     @author Shreyas Vinod
-    @version 0.1.5
+    @version 0.1.6
 
     @brief Holds definitions for code readability and speed improvements.
 
@@ -15,6 +15,7 @@
     * 25/11/2015 0.1.3 Added NO_MOVE.
     * 28/11/2015 0.1.4 Added MAX_DEPTH.
     * 06/12/2015 0.1.5 Added FLIPV[64] and FLIPV_BB.
+    * 06/12/2015 0.1.6 Added pretty_bitboard(uint64).
 */
 
 /**
@@ -34,15 +35,18 @@
 // #define WIN32 // Uncomment if compiling for Windows.
 
 #include <string> // std::string
+#include <sstream> // std::stringstream
 #include <assert.h> // std::assert()
 
 typedef unsigned long long uint64;
 
-// Globals
+// Macros
 
 #define INFINITY_C 50000
 #define MAX_DEPTH 64
 #define IS_MATE 49936
+
+// Enumerations
 
 enum { BLACK, WHITE };
 
@@ -68,6 +72,8 @@ enum
     a7, b7, c7, d7, e7, f7, g7, h7,
     a8, b8, c8, d8, e8, f8, g8, h8, NO_SQ
 };
+
+// Globals
 
 const uint64 B_FILE[9] = {
     0x0000000000000000ULL, 0x0101010101010101ULL, 0x0202020202020202ULL,
@@ -211,6 +217,8 @@ inline uint64 FLIPV_BB(uint64 bb)
             ((bb >> 56) );
 }
 
+// Miscellaneous helper functions
+
 /**
     @brief Calculates which file the given cell index is on.
 
@@ -267,6 +275,34 @@ inline unsigned int GET_INDEX(unsigned int file, unsigned int rank)
     assert(rank >= RANK_1 && rank <= RANK_8);
 
     return __builtin_ffsll(B_FILE[file] & B_RANK[rank]) - 1;
+}
+
+/**
+    @brief Returns a 'pretty' string of the given bitboard for output purposes
+           to standard output.
+
+    @param bb is the unsigned integer (bitboard) to convert into 'pretty' form.
+
+    @return std::string representing a 'pretty' version of the bitboard for
+            standard output.
+*/
+
+inline std::string pretty_bitboard(uint64 bb)
+{
+    std::stringstream pretty_str;
+    unsigned int index;
+
+    for(unsigned int i = 0; i < 64; i++)
+    {
+        index = (56 - (8 * (i / 8))) + (i % 8); // LERF translation.
+
+        if(bb & GET_BB(index)) pretty_str << "1 ";
+        else pretty_str << "0 ";
+
+        if(((i + 1) % 8 == 0) && (i != 0) && (i != 63)) pretty_str << "\n";
+    }
+
+    return pretty_str.str();
 }
 
 #endif // DEFS_H

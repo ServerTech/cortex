@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename search.cpp
     @author Shreyas Vinod
-    @version 0.1.2
+    @version 0.1.4
 
     @brief The heart of the alpha-beta algorithm that makes computer
            chess possible.
@@ -15,6 +15,8 @@
     * 29/11/2015 0.1.0 Initial version.
     * 02/12/2015 0.1.1 Added time handling.
     * 02/12/2015 0.1.2 Added null move pruning.
+    * 06/12/2015 0.1.3 Added ponder move output during search.
+    * 06/12/2015 0.1.4 Added in-check extensions.
 */
 
 /**
@@ -244,6 +246,8 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
     bool in_check = is_sq_attacked(POP_BIT(king_bb), board.side, board);
 
+    if(in_check) depth++;
+
     int score = -INFINITY_C;
     unsigned int pv_move = NO_MOVE;
 
@@ -393,7 +397,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
 void search(Board& board, SearchInfo& search_info)
 {
-    unsigned int best_move = NO_MOVE;
+    unsigned int best_move = NO_MOVE, ponder_move = NO_MOVE;
     int best_score = -INFINITY_C;
 
     unsigned int pv_moves; // Number of PV moves found.
@@ -410,6 +414,8 @@ void search(Board& board, SearchInfo& search_info)
 
         pv_moves = probe_pv_line(board, current_depth); // Probe for PV line.
         best_move = board.pv_array[0];
+        if(pv_moves > 1) ponder_move = board.pv_array[1];
+        else ponder_move = NO_MOVE;
 
         // Output some key information to standard output (in UCI format).
 
@@ -430,5 +436,13 @@ void search(Board& board, SearchInfo& search_info)
         //     ((search_info.fhf / search_info.fh) * 100) << "%" << std::endl;
     }
 
-    std::cout << std::endl << "bestmove " << COORD_MOVE(best_move) << std::endl;
+    if(ponder_move != NO_MOVE)
+    {
+        std::cout << "bestmove " << COORD_MOVE(best_move) << " ponder " <<
+            COORD_MOVE(ponder_move) << std::endl;
+    }
+    else
+    {
+        std::cout << "bestmove " << COORD_MOVE(best_move) << std::endl;
+    }
 }

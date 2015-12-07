@@ -343,12 +343,12 @@ unsigned int determine_type(const Board& board, uint64 bit_chk)
 
     if(bit_chk & board.chessboard[ALL_WHITE])
     {
-        for(int i = wP; i <= wK; i++)
+        for(unsigned int i = wP; i <= wK; i++)
             if(bit_chk & board.chessboard[i]) return i;
     }
     else if(bit_chk & board.chessboard[ALL_BLACK])
     {
-        for(int i = bP; i <= bK; i++)
+        for(unsigned int i = bP; i <= bK; i++)
             if(bit_chk & board.chessboard[i]) return i;
     }
 
@@ -374,10 +374,10 @@ char conv_char(const Board& board, unsigned int index)
 {
     assert(index < 64);
 
-    int type = determine_type(board, GET_BB(index));
+    unsigned int type = determine_type(board, GET_BB(index));
 
     if(type == EMPTY) return '.';
-    else if(type >= wP && type <= wK)
+    else if(type <= wK)
     {
         switch(type)
         {
@@ -423,11 +423,11 @@ std::string pretty_board(Board& board)
 {
     std::stringstream pretty_str;
     pretty_str << "8    ";
-    int cur_rank = 8, index;
+    unsigned int cur_rank = 8, index;
 
     // Board
 
-    for(int i = 0; i < 64; i++)
+    for(unsigned int i = 0; i < 64; i++)
     {
         index = (56 - (8 * (i / 8))) + (i % 8); // LERF translation.
 
@@ -480,7 +480,7 @@ std::string pretty_board(Board& board)
 
     // Static evaluation
 
-    pretty_str << "Static evaluation: " << static_eval(board) << std::endl;
+    pretty_str << "Static evaluation: " << static_eval(board) << "\n";
 
     // Zobrist hash
 
