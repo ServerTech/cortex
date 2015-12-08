@@ -149,7 +149,7 @@ inline void clear_for_search(Board& board, SearchInfo& search_info)
 
 int quiescence(int alpha, int beta, Board& board, SearchInfo& search_info)
 {
-    if((search_info.nodes & 4095) == 0) check_up(search_info);
+    if((search_info.nodes & 8191) == 0) check_up(search_info);
 
     search_info.nodes++;
 
@@ -176,6 +176,8 @@ int quiescence(int alpha, int beta, Board& board, SearchInfo& search_info)
 
     list_size = ml.list.size();
 
+    // Sort the move list based on scores.
+
     std::sort(ml.list.begin(), ml.list.end(),
         [](const Move& lhs, const Move& rhs){ return lhs.score > rhs.score; });
 
@@ -190,9 +192,9 @@ int quiescence(int alpha, int beta, Board& board, SearchInfo& search_info)
 
         undo_move(board);
 
-        if(score > alpha) // Alpha cutoff
+        if(score > alpha) // Alpha cutoff.
         {
-            if(score >= beta) // Beta cutoff
+            if(score >= beta) // Beta cutoff.
             {
                 if(legal == 1) search_info.fhf++;
                 search_info.fh++;
@@ -226,11 +228,15 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 {
     if(depth == 0) return quiescence(alpha, beta, board, search_info);
 
-    if((search_info.nodes & 4095) == 0) check_up(search_info);
+    if((search_info.nodes & 8191) == 0) check_up(search_info);
 
     search_info.nodes++;
 
+    // Check if the board is a repetition.
+
     if((is_repetition(board) || board.fifty >= 100) && board.ply) return 0;
+
+    // Check if we've reached the maximum depth.
 
     if(board.ply >= MAX_DEPTH - 1) // Maximum depth.
     {
@@ -246,10 +252,12 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
     bool in_check = is_sq_attacked(POP_BIT(king_bb), board.side, board);
 
-    if(in_check) depth++;
+    if(in_check) depth++; // In-check search extension.
 
     int score = -INFINITY_C;
     unsigned int pv_move = NO_MOVE;
+
+    // Check if an entry exists in the transposition table.
 
     if(probe_table(board.t_table, board.ply, board.hash_key, depth, pv_move,
         score, alpha, beta))
@@ -259,11 +267,9 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
     // Null move pruning
 
-    uint64 big_pieces =
-        board.chessboard[wQ] | board.chessboard[wR] | board.chessboard[wB] |
-        board.chessboard[bQ] | board.chessboard[bR] | board.chessboard[bB];
-
-    if(do_null && !in_check && depth >= 4 && board.ply && big_pieces)
+    if(do_null && !in_check && depth >= 4 && board.ply &&
+        (board.chessboard[wQ] | board.chessboard[wR] |
+        board.chessboard[bQ] | board.chessboard[bR]))
     {
         make_null_move(board);
         score = -alpha_beta(-beta, -beta + 1, depth - 4, board, search_info, 0);
@@ -289,6 +295,8 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
     list_size = ml.list.size();
 
+    // If a PV line was found, find the PV move and increase its score.
+
     if(pv_move != NO_MOVE)
     {
         for(unsigned int i = 0; i < list_size; i++)
@@ -303,8 +311,12 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
         }
     }
 
+    // Sort the move list based on scores.
+
     std::sort(ml.list.begin(), ml.list.end(),
         [](const Move& lhs, const Move& rhs){ return lhs.score > rhs.score; });
+
+    // Loop over every move.
 
     for(unsigned int i = 0; i < list_size; i++)
     {
@@ -325,12 +337,14 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
             best_score = score;
             best_move = list_move;
 
-            if(score > alpha) // Alpha cutoff
+            if(score > alpha) // Alpha cutoff.
             {
-                if(score >= beta) // Beta cutoff
+                if(score >= beta) // Beta cutoff.
                 {
                     if(legal == 1) search_info.fhf++;
                     search_info.fh++;
+
+                    // Killer heuristic.
 
                     if(!IS_CAP(best_move))
                     {
@@ -347,6 +361,8 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
                 }
 
                 alpha = score;
+
+                // History heuristic.
 
                 if(!IS_CAP(best_move))
                 {
@@ -366,11 +382,15 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
         }
     }
 
+    // If there were no legal moves, it must be checkmate/stalemate.
+
     if(legal == 0)
     {
         if(in_check) return -INFINITY_C + board.ply; // Checkmate
         else return 0; // Stalemate
     }
+
+    // Check if we improved alpha.
 
     if(alpha != old_alpha)
     {
@@ -410,7 +430,9 @@ void search(Board& board, SearchInfo& search_info)
         best_score = alpha_beta(-INFINITY_C, INFINITY_C, current_depth,
             board, search_info, 1); // Call Alpha-Beta and get the best score.
 
-        if(search_info.stopped) break;
+        if(search_info.stopped) break; // Break out if search was interrupted.
+
+        // Get the PV line.
 
         pv_moves = probe_pv_line(board, current_depth); // Probe for PV line.
         best_move = board.pv_array[0];
@@ -432,8 +454,10 @@ void search(Board& board, SearchInfo& search_info)
 
         std::cout << std::endl;
 
-        // std::cout << "ordering " <<
-        //     ((search_info.fhf / search_info.fh) * 100) << "%" << std::endl;
+#ifdef VERBOSE
+        std::cout << "ordering " <<
+            ((search_info.fhf / search_info.fh) * 100) << "%" << std::endl;
+#endif // VERBOSE
     }
 
     if(ponder_move != NO_MOVE)

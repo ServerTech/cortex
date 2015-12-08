@@ -91,7 +91,7 @@ bool input_waiting()
         GetNumberOfConsoleInputEvents(inh, &dw);
         return dw <= 1 ? 0 : dw;
     }
-#endif // #inndef WIN32
+#endif // WIN32
 }
 
 /**

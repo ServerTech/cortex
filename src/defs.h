@@ -33,6 +33,7 @@
 
 // #define NDEBUG // Disabled assert() if defined.
 // #define WIN32 // Uncomment if compiling for Windows.
+// #define VERBOSE // Enables more output.
 
 #include <string> // std::string
 #include <sstream> // std::stringstream

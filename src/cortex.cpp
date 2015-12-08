@@ -12,6 +12,7 @@
     * 02/12/2015 0.1.0 Added this bit.
     * 03/12/2015 0.1.1 Added UCI support.
     * 07/12/2015 0.1.2 Added evaluation testing.
+    * 07/12/2015 0.1.3 Added the 'perftc <depth>' command.
 */
 
 /**
@@ -99,7 +100,7 @@ int main()
 
     unsigned int i = 0;
 
-    if(!parse_fen(board, FEN_START, i))
+    if(!parse_fen(board, TEST_FEN_1, i))
         std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
@@ -153,9 +154,19 @@ int main()
             MoveList ml = gen_legal_moves(board);
             std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
         }
+        else if(usr_cmd == "legalc")
+        {
+            MoveList ml = gen_legal_captures(board);
+            std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
+        }
         else if(usr_cmd == "pseudo")
         {
             MoveList ml = gen_moves(board);
+            std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
+        }
+        else if(usr_cmd == "pseudoc")
+        {
+            MoveList ml = gen_captures(board);
             std::cout << pretty_move_list(ml.list) << std::endl << std::endl;
         }
         else if(usr_cmd == "attacked")
@@ -172,7 +183,18 @@ int main()
 
             perform_perft_verbose(board, argument);
 
-            std::cout << "It took: " << get_time_diff(begin) <<
+            std::cout << "It took: " << get_time_diff(begin) / 1000.0 <<
+                " s." << std::endl << std::endl;
+        }
+        else if(usr_cmd == "perftc")
+        {
+            std::cin >> argument;
+
+            Time begin = get_cur_time();
+
+            perform_perftc_verbose(board, argument);
+
+            std::cout << "It took: " << get_time_diff(begin) / 1000.0 <<
                 " s." << std::endl << std::endl;
         }
         else if(usr_cmd == "testeval")
@@ -238,7 +260,7 @@ int main()
             std::cout << "\x1B[2J\x1B[H";
         #else
             if(system("cls")){};
-        #endif // #ifndef WIN32
+        #endif // WIN32
             std::cout << pretty_board(board) << std::endl << std::endl;
         }
         else if((move = parse_move(board, usr_cmd)))

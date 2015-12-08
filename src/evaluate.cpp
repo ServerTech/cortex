@@ -255,10 +255,6 @@ int static_eval(Board& board)
             score += S_ROOK_HALFOPENFILE;
 
         score += ROOK_ST[index]; // Piece-square table
-
-        MoveList ml;
-        gen_rook_moves(board.chessboard[wR], WHITE, ml, board);
-        score += ml.list.size() * S_MOBILITY; // Mobility bonus
     }
 
     /************************* WHITE KNIGHTS *************************/
@@ -384,6 +380,8 @@ int static_eval(Board& board)
 
         score -= PAWN_ST[FLIPV[index]]; // Piece-square table
     }
+
+    // Return relative score.
 
     if(board.side == WHITE) return score;
     else return -score;
