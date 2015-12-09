@@ -36,13 +36,15 @@
 
 int S_QUEEN = 900;
 int S_ROOK = 500;
-int S_KNIGHT = 315;
+int S_KNIGHT = 300;
 int S_BISHOP = 300;
 int S_PAWN = 100;
 
 // Global values
 
 int S_MOBILITY = 10;
+const int S_KING_IN_CHECK = -200;
+const int S_ENDGAME = 1500;
 
 // Queens
 
@@ -65,12 +67,45 @@ uint64 PAWN_BPAS_MASK[64]; // Black passed pawn mask.
 
 // Piece-square tables
 
+const int KING_ST[64] = {
+ 5  ,   7   ,   0   ,  -5   ,  -5   ,   0   ,   10  ,   5   ,
+-15 ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,
+-30 ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,
+-70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,
+-70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,
+-70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,
+-70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,
+-70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70
+};
+
+const int KING_ST_END[64] = {
+-50   ,  -20  ,  -10  ,  -10  ,  -10  ,  -10  ,  -20  ,  -50  ,
+-20   ,   0   ,   0   ,   10  ,   10  ,   0   ,   0   ,  -20  ,
+-10   ,   0   ,   10  ,   15  ,   15  ,   10  ,   0   ,  -10  ,
+-10   ,   10  ,   15  ,   30  ,   30  ,   15  ,   10  ,  -10  ,
+-10   ,   10  ,   15  ,   30  ,   30  ,   15  ,   10  ,  -10  ,
+-10   ,   0   ,   10  ,   15  ,   15  ,   10  ,   0   ,  -10  ,
+-20   ,   0   ,   0   ,   10  ,   10  ,   0   ,   0   ,  -20  ,
+-50   ,  -20  ,  -10  ,  -10  ,  -10  ,  -10  ,  -20  ,  -50
+};
+
+const int QUEEN_ST[64] = {
+0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,
+0   ,   0   ,   0   ,   3   ,   3   ,   0   ,   0   ,   0   ,
+0   ,   2   ,   5   ,   8   ,   8   ,   5   ,   2   ,   0   ,
+0   ,   5   ,   8   ,   10  ,   10  ,   8   ,   5   ,   0   ,
+0   ,   5   ,   8   ,   10  ,   10  ,   8   ,   5   ,   0   ,
+0   ,   2   ,   5   ,   8   ,   8   ,   5   ,   2   ,   0   ,
+0   ,   0   ,   0   ,   3   ,   3   ,   0   ,   0   ,   0   ,
+0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0
+};
+
 const int ROOK_ST[64] = {
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
-0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
-0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
-0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
+0   ,   3   ,   5   ,   10  ,   10  ,   5   ,   3   ,   0   ,
+0   ,   3   ,   5   ,   15  ,   15  ,   5   ,   3   ,   0   ,
+0   ,   3   ,   5   ,   10  ,   10  ,   5   ,   3   ,   0   ,
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
 25  ,   25  ,   25  ,   25  ,   25  ,   25  ,   25  ,   25  ,
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0
@@ -79,8 +114,8 @@ const int ROOK_ST[64] = {
 const int KNIGHT_ST[64] = {
 0   ,  -10  ,   0   ,   0   ,   0   ,   0   ,  -10  ,   0   ,
 0   ,   0   ,   0   ,   5   ,   5   ,   0   ,   0   ,   0   ,
-0   ,   0   ,   10  ,   10  ,   10  ,   10  ,   0   ,   0   ,
-0   ,   0   ,   10  ,   20  ,   20  ,   10  ,   5   ,   0   ,
+5   ,   0   ,   10  ,   10  ,   10  ,   10  ,   0   ,   5   ,
+0   ,   5   ,   10  ,   20  ,   20  ,   10  ,   5   ,   0   ,
 5   ,   10  ,   15  ,   20  ,   20  ,   15  ,   10  ,   5   ,
 5   ,   10  ,   10  ,   20  ,   20  ,   10  ,   10  ,   5   ,
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
@@ -100,12 +135,12 @@ const int BISHOP_ST[64] = {
 
 const int PAWN_ST[64] = {
 0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,
-10  ,   10  ,   0   ,  -10  ,  -10  ,   0   ,   10  ,   10  ,
-5   ,   0   ,   0   ,   5   ,   5   ,   0   ,   0   ,   5   ,
-0   ,   0   ,   10  ,   20  ,   20  ,   10  ,   0   ,   0   ,
+10  ,   5   ,   0   ,  -10  ,  -10  ,   0   ,   5   ,   10  ,
+5   ,   10  ,   0   ,   10  ,   10  ,   0   ,   10  ,   5   ,
+0   ,   0   ,   5   ,   20  ,   20  ,   5   ,   0   ,   0   ,
 5   ,   5   ,   5   ,   10  ,   10  ,   5   ,   5   ,   5   ,
-10  ,   10  ,   10  ,   20  ,   20  ,   10  ,   10  ,   10  ,
-20  ,   20  ,   20  ,   30  ,   30  ,   20  ,   20  ,   20  ,
+10  ,   10  ,   10  ,   25  ,   25  ,   10  ,   10  ,   10  ,
+15  ,   15  ,   15  ,   30  ,   30  ,   15  ,   15  ,   15  ,
 0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0
 };
 
@@ -219,6 +254,8 @@ int static_eval(Board& board)
     unsigned int count, index, file, rank; // Temporary variables.
     uint64 piece_bb; // Temporary variable.
 
+    unsigned int white_mat = 0, black_mat = 0;
+
     // White
 
     /************************* WHITE QUEENS *************************/
@@ -226,6 +263,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[wQ];
     count = CNT_BITS(piece_bb);
     score += count * S_QUEEN; // Material score
+    white_mat += count * S_QUEEN;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -236,6 +274,8 @@ int static_eval(Board& board)
             score += S_QUEEN_OPENFILE;
         else if((board.chessboard[wP] & file) == 0) // Half-open file
             score += S_QUEEN_HALFOPENFILE;
+
+        score += QUEEN_ST[index]; // Piece-square table
     }
 
     /************************* WHITE ROOKS *************************/
@@ -243,6 +283,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[wR];
     count = CNT_BITS(piece_bb);
     score += count * S_ROOK; // Material score
+    white_mat += count * S_ROOK;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -262,6 +303,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[wN];
     count = CNT_BITS(piece_bb);
     score += count * S_KNIGHT; // Material score
+    white_mat += count * S_KNIGHT;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -273,6 +315,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[wB];
     count = CNT_BITS(piece_bb);
     score += count * S_BISHOP; // Material score
+    white_mat += count * S_BISHOP;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -284,6 +327,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[wP];
     count = CNT_BITS(piece_bb);
     score += count * S_PAWN; // Material score
+    white_mat += count * S_PAWN;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -307,6 +351,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[bQ];
     count = CNT_BITS(piece_bb);
     score -= count * S_QUEEN; // Material score
+    black_mat += count * S_QUEEN;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -317,6 +362,8 @@ int static_eval(Board& board)
             score -= S_QUEEN_OPENFILE;
         else if((board.chessboard[bP] & file) == 0) // Half-open file
             score -= S_QUEEN_HALFOPENFILE;
+
+        score -= QUEEN_ST[FLIPV[index]]; // Piece-square table
     }
 
     /************************* BLACK ROOKS *************************/
@@ -324,6 +371,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[bR];
     count = CNT_BITS(piece_bb);
     score -= count * S_ROOK; // Material score
+    black_mat += count * S_ROOK;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -343,6 +391,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[bN];
     count = CNT_BITS(piece_bb);
     score -= count * S_KNIGHT; // Material score
+    black_mat += count * S_KNIGHT;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -354,6 +403,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[bB];
     count = CNT_BITS(piece_bb);
     score -= count * S_BISHOP; // Material score
+    black_mat += count * S_BISHOP;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -365,6 +415,7 @@ int static_eval(Board& board)
     piece_bb = board.chessboard[bP];
     count = CNT_BITS(piece_bb);
     score -= count * S_PAWN; // Material score
+    black_mat += count * S_PAWN;
 
     for(unsigned int i = 0; i < count; i++)
     {
@@ -380,6 +431,28 @@ int static_eval(Board& board)
 
         score -= PAWN_ST[FLIPV[index]]; // Piece-square table
     }
+
+    /************************* WHITE KING *************************/    
+
+    piece_bb = board.chessboard[wK];
+
+    index = POP_BIT(piece_bb);
+
+    if(white_mat <= S_ENDGAME) score += KING_ST_END[index];
+    else score += KING_ST[index];
+
+    // if(is_sq_attacked(index, WHITE, board)) score += S_KING_IN_CHECK;
+
+    /************************* BLACK KING *************************/
+
+    piece_bb = board.chessboard[bK];
+
+    index = POP_BIT(piece_bb);
+
+    if(black_mat <= S_ENDGAME) score -= KING_ST_END[FLIPV[index]];
+    else score -= KING_ST[FLIPV[index]];
+
+    // if(is_sq_attacked(index, BLACK, board)) score -= S_KING_IN_CHECK;
 
     // Return relative score.
 

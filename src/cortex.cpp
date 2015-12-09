@@ -100,7 +100,7 @@ int main()
 
     unsigned int i = 0;
 
-    if(!parse_fen(board, TEST_FEN_1, i))
+    if(!parse_fen(board, FEN_START, i))
         std::cout << "Parse error." << std::endl;
     else std::cout << pretty_board(board) << std::endl << std::endl;
 
@@ -131,6 +131,8 @@ int main()
             SearchInfo search_info;
             search_info.depth_set = 1;
             search_info.depth = argument;
+
+            search_info.start_time = get_cur_time();
 
             search(board, search_info);
             std::cout << std::endl;
