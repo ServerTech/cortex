@@ -967,8 +967,6 @@ void undo_null_move(Board& board)
 
     if(board.en_pas_sq != NO_SQ) HASH_EP(board); // Hash out en passant square.
 
-    HASH_CA(board); // Hash out castling permissions.
-
     board.castle_perm = ms.castle_perm;
     board.en_pas_sq = ms.en_pas_sq;
     board.fifty = ms.fifty;

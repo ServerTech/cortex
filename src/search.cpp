@@ -263,7 +263,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
         return score;
     }
 
-    // Null move pruning
+    // Null move pruning (zugzwang positions still possible)
 
     if(do_null && !in_check && depth >= 4 && board.ply &&
         (board.chessboard[wQ] | board.chessboard[wR] |
@@ -383,6 +383,8 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     }
 
     // Check if we improved alpha.
+
+    assert(alpha >= old_alpha);
 
     if(alpha != old_alpha)
     {
