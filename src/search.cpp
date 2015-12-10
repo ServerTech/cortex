@@ -153,7 +153,7 @@ int quiescence(int alpha, int beta, Board& board, SearchInfo& search_info)
 
     if((is_repetition(board) || board.fifty >= 100) && board.ply) return 0;
 
-    if(board.ply >= MAX_DEPTH) // Maximum depth.
+    if(board.ply >= MAX_DEPTH - 1) // Maximum depth.
     {
         return static_eval(board);
     }
@@ -281,7 +281,6 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     // Alpha-Beta!
 
     unsigned int best_move = NO_MOVE;
-    int best_score = -INFINITY_C;
     score = -INFINITY_C;
 
     int old_alpha = alpha;
@@ -330,52 +329,47 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
         if(search_info.stopped == 1) return 0;
 
-        if(score > best_score)
+        if(score > alpha) // Alpha cutoff.
         {
-            best_score = score;
+            if(score >= beta) // Beta cutoff.
+            {
+                if(legal == 1) search_info.fhf++;
+                search_info.fh++;
+
+                // Killer heuristic.
+
+                if(!IS_CAP(list_move))
+                {
+                    board.search_killers[1][board.ply] =
+                        board.search_killers[0][board.ply];
+
+                    board.search_killers[0][board.ply] = list_move;
+                }
+
+                store_entry(board.t_table, board.ply, board.hash_key, list_move,
+                    beta, depth, TFBETA);
+
+                return beta;
+            }
+
+            alpha = score;
             best_move = list_move;
 
-            if(score > alpha) // Alpha cutoff.
+            // History heuristic.
+
+            if(!IS_CAP(best_move))
             {
-                if(score >= beta) // Beta cutoff.
-                {
-                    if(legal == 1) search_info.fhf++;
-                    search_info.fh++;
+                assert((GET_BB(DEP_CELL(best_move)) != 0ULL) &&
+                    ((GET_BB(DEP_CELL(best_move)) &
+                    (GET_BB(DEP_CELL(best_move)) - 1)) == 0ULL));
 
-                    // Killer heuristic.
+                board.search_history[determine_type(board,
+                    GET_BB(DEP_CELL(best_move)))]
+                    [DST_CELL(best_move)] += depth;
 
-                    if(!IS_CAP(best_move))
-                    {
-                        board.search_killers[1][board.ply] =
-                            board.search_killers[0][board.ply];
-
-                        board.search_killers[0][board.ply] = best_move;
-                    }
-
-                    store_entry(board.t_table, board.ply, board.hash_key, best_move,
-                        beta, depth, TFBETA);
-
-                    return beta;
-                }
-
-                alpha = score;
-
-                // History heuristic.
-
-                if(!IS_CAP(best_move))
-                {
-                    assert((GET_BB(DEP_CELL(best_move)) != 0ULL) &&
-                        ((GET_BB(DEP_CELL(best_move)) &
-                        (GET_BB(DEP_CELL(best_move)) - 1)) == 0ULL));
-
-                    assert((GET_BB(DST_CELL(best_move)) != 0ULL) &&
-                        ((GET_BB(DST_CELL(best_move)) &
-                        (GET_BB(DST_CELL(best_move)) - 1)) == 0ULL));
-
-                    board.search_history[determine_type(board,
-                        GET_BB(DEP_CELL(best_move)))][determine_type(board,
-                        GET_BB(DST_CELL(best_move)))] += depth;
-                }
+                board.search_history[determine_type(board,
+                    GET_BB(DEP_CELL(best_move)))]
+                    [DST_CELL(best_move)] += depth;
             }
         }
     }
@@ -393,7 +387,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
     if(alpha != old_alpha)
     {
         store_entry(board.t_table, board.ply, board.hash_key, best_move,
-            best_score, depth, TFEXACT);
+            alpha, depth, TFEXACT);
     }
     else
     {

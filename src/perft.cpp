@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename perft.cpp
     @author Shreyas Vinod
-    @version 0.1.1
+    @version 0.1.2
 
     @brief Performs basic perft testing on the move generator.
 
@@ -10,6 +10,7 @@
     * 22/11/2015 File created.
     * 23/11/2015 0.1.0 Initial version.
     * 07/12/2015 0.1.1 Added perft for just captures.
+    * 10/12/2015 0.1.2 Added check for zobrist hashes.
 */
 
 /**
@@ -28,6 +29,7 @@
 #include "board.h"
 #include "move.h"
 #include "movegen.h"
+#include "hash.h"
 
 // Prototypes
 
@@ -66,6 +68,10 @@ void perft(Board& board, uint64& leaf_nodes, unsigned int depth)
     for(unsigned int i = 0; i < movegen_count; i++)
     {
         if(!make_move(board, ml.list.at(i).move)) continue;
+
+        if(board.hash_key != gen_hash(board))
+            std::cout << "HASH ERROR!" << std::endl;
+
         perft(board, leaf_nodes, depth - 1);
         undo_move(board);
     }
@@ -100,6 +106,10 @@ void perftc(Board& board, uint64& leaf_nodes, unsigned int depth)
     for(unsigned int i = 0; i < movegen_count; i++)
     {
         if(!make_move(board, ml.list.at(i).move)) continue;
+
+        if(board.hash_key != gen_hash(board))
+            std::cout << "HASH ERROR!" << std::endl;
+
         perft(board, leaf_nodes, depth - 1);
         undo_move(board);
     }
@@ -157,6 +167,10 @@ uint64 perform_perft_verbose(Board& board, unsigned int depth)
     {
         move = ml.list.at(i).move;
         if(!make_move(board, move)) continue;
+
+        if(board.hash_key != gen_hash(board))
+            std::cout << "HASH ERROR!" << std::endl;
+
         num_moves++;
         uint64 cum_nodes = leaf_nodes;
         perft(board, leaf_nodes, depth - 1);
@@ -201,6 +215,10 @@ uint64 perform_perftc_verbose(Board& board, unsigned int depth)
     {
         move = ml.list.at(i).move;
         if(!make_move(board, move)) continue;
+
+        if(board.hash_key != gen_hash(board))
+            std::cout << "HASH ERROR!" << std::endl;
+
         num_moves++;
         uint64 cum_nodes = leaf_nodes;
         perftc(board, leaf_nodes, depth - 1);

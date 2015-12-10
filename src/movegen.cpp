@@ -183,13 +183,8 @@ inline void push_quiet_move(MoveList& ml, unsigned int move,
             ((GET_BB(DEP_CELL(move)) &
             (GET_BB(DEP_CELL(move)) - 1)) == 0ULL));
 
-        assert((GET_BB(DST_CELL(move)) != 0ULL) &&
-            ((GET_BB(DST_CELL(move)) &
-            (GET_BB(DST_CELL(move)) - 1)) == 0ULL));
-
         Move move_push(move, board.search_history[determine_type(board,
-            GET_BB(DEP_CELL(move)))][determine_type(board,
-            GET_BB(DST_CELL(move)))]);
+            GET_BB(DEP_CELL(move)))][DST_CELL(move)]);
         ml.list.push_back(move_push);
     }
 }

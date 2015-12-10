@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename perft.h
     @author Shreyas Vinod
-    @version 0.1.1
+    @version 0.1.2
 
     @brief Performs basic perft testing on the move generator.
 
@@ -10,6 +10,7 @@
     * 22/11/2015 File created.
     * 23/11/2015 0.1.0 Initial version.
     * 07/12/2015 0.1.1 Added perft for just captures.
+    * 10/12/2015 0.1.2 Added check for zobrist hashes.
 */
 
 /**
