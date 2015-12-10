@@ -92,10 +92,8 @@ inline bool is_repetition(const Board& board)
 {
     int bound = board.his_ply - 1;
 
-    for(int i = board.his_ply - board.ply; i < bound; i++)
-    {
+    for(int i = board.his_ply - board.fifty; i < bound; i++)
         if(board.history.at(i).hash_key == board.hash_key) return 1;
-    }
 
     return 0;
 }
