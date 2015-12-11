@@ -275,7 +275,7 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
 
         if(search_info.stopped) return 0;
 
-        if(score >= beta) return beta;
+        if(score >= beta && score < IS_MATE && score > -ISMATE) return beta;
     }
 
     // Alpha-Beta!
