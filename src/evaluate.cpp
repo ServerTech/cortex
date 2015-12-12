@@ -342,15 +342,15 @@ int static_eval(Board& board)
         file = GET_FILE(index);
         rank = GET_RANK(index);
 
-        if(board.chessboard[wP] & PAWN_ISO_MASK[index]) // Isolated pawn
+        if((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL) // Isolated
             score += S_PAWN_ISOLATED;
 
         uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
             GET_BB(index);
 
-        if(pawn_on_file) score += S_PAWN_DOUBLED;
+        if(pawn_on_file) score += S_PAWN_DOUBLED; // Doubled
 
-        if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL) // Passed pawn
+        if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL) // Passed
             score += S_PAWN_PASSED[rank];
 
         score += PAWN_ST[index]; // Piece-square table
@@ -437,15 +437,15 @@ int static_eval(Board& board)
         file = GET_FILE(index);
         rank = GET_RANK(index);
 
-        if(board.chessboard[bP] & PAWN_ISO_MASK[index]) // Isolated pawn
+        if((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL) // Isolated
             score -= S_PAWN_ISOLATED;
 
         uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
             GET_BB(index);
 
-        if(pawn_on_file) score -= S_PAWN_DOUBLED;
+        if(pawn_on_file) score -= S_PAWN_DOUBLED; // Doubled
 
-        if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL) // Passed pawn
+        if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL) // Passed
             score -= S_PAWN_PASSED[9 - rank];
 
         score -= PAWN_ST[FLIPV[index]]; // Piece-square table

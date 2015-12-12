@@ -270,12 +270,13 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
         board.chessboard[bQ] | board.chessboard[bR]))
     {
         make_null_move(board);
-        score = -alpha_beta(-beta, -beta + 1, depth - 4, board, search_info, 0);
+        score = -alpha_beta(-beta, -beta + 1, depth - 4, board,
+            search_info, 0);
         undo_null_move(board);
 
         if(search_info.stopped) return 0;
 
-        if(score >= beta && score < IS_MATE && score > -ISMATE) return beta;
+        if(score >= beta && score < IS_MATE && score > -IS_MATE) return beta;
     }
 
     // Alpha-Beta!
