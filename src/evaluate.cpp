@@ -36,14 +36,14 @@
 
 int S_QUEEN = 900;
 int S_ROOK = 500;
-int S_KNIGHT = 300;
+int S_KNIGHT = 315;
 int S_BISHOP = 300;
 int S_PAWN = 100;
 
 // Global values
 
-int S_MOBILITY = 10;
-const int S_KING_IN_CHECK = -200;
+// int S_MOBILITY = 10;
+// const int S_KING_IN_CHECK = -200;
 const int S_ENDGAME = 1500;
 
 // Queens
@@ -56,9 +56,14 @@ int S_QUEEN_HALFOPENFILE = 3;
 int S_ROOK_OPENFILE = 10;
 int S_ROOK_HALFOPENFILE = 5;
 
+// Bishops
+
+int S_BISHOP_PAIR = 30;
+
 // Pawns
 
 const int S_PAWN_ISOLATED = -10;
+const int S_PAWN_DOUBLED = -15;
 const int S_PAWN_PASSED[9] = { 0, 0, 5, 10, 20, 35, 60, 100, 0 };
 
 uint64 PAWN_ISO_MASK[64]; // Isolated pawn mask.
@@ -322,6 +327,8 @@ int static_eval(Board& board)
         score += BISHOP_ST[POP_BIT(piece_bb)]; // Piece-square table
     }
 
+    if(count >= 2) score += S_BISHOP_PAIR;
+
     /************************* WHITE PAWNS *************************/
 
     piece_bb = board.chessboard[wP];
@@ -337,6 +344,11 @@ int static_eval(Board& board)
 
         if(board.chessboard[wP] & PAWN_ISO_MASK[index]) // Isolated pawn
             score += S_PAWN_ISOLATED;
+
+        uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
+            GET_BB(index);
+
+        if(pawn_on_file) score += S_PAWN_DOUBLED;
 
         if(board.chessboard[bP] & PAWN_WPAS_MASK[index]) // Passed pawn
             score += S_PAWN_PASSED[rank];
@@ -410,6 +422,8 @@ int static_eval(Board& board)
         score -= BISHOP_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
     }
 
+    if(count >= 2) score -= S_BISHOP_PAIR;
+
     /************************* BLACK PAWNS *************************/
 
     piece_bb = board.chessboard[bP];
@@ -426,13 +440,18 @@ int static_eval(Board& board)
         if(board.chessboard[bP] & PAWN_ISO_MASK[index]) // Isolated pawn
             score -= S_PAWN_ISOLATED;
 
+        uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
+            GET_BB(index);
+
+        if(pawn_on_file) score -= S_PAWN_DOUBLED;
+
         if(board.chessboard[wP] & PAWN_BPAS_MASK[index]) // Passed pawn
             score -= S_PAWN_PASSED[9 - rank];
 
         score -= PAWN_ST[FLIPV[index]]; // Piece-square table
     }
 
-    /************************* WHITE KING *************************/    
+    /************************* WHITE KING *************************/
 
     piece_bb = board.chessboard[wK];
 
