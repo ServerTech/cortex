@@ -350,7 +350,7 @@ int static_eval(Board& board)
 
         if(pawn_on_file) score += S_PAWN_DOUBLED;
 
-        if(board.chessboard[bP] & PAWN_WPAS_MASK[index]) // Passed pawn
+        if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL) // Passed pawn
             score += S_PAWN_PASSED[rank];
 
         score += PAWN_ST[index]; // Piece-square table
@@ -445,7 +445,7 @@ int static_eval(Board& board)
 
         if(pawn_on_file) score -= S_PAWN_DOUBLED;
 
-        if(board.chessboard[wP] & PAWN_BPAS_MASK[index]) // Passed pawn
+        if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL) // Passed pawn
             score -= S_PAWN_PASSED[9 - rank];
 
         score -= PAWN_ST[FLIPV[index]]; // Piece-square table
