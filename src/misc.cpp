@@ -61,7 +61,7 @@ bool input_waiting()
     struct timeval tv;
     FD_ZERO(&readfds);
     FD_SET(fileno(stdin), &readfds);
-    tv.tv_sec=0; tv.tv_usec=0;
+    tv.tv_sec = 0; tv.tv_usec = 0;
     select(16, &readfds, nullptr, nullptr, &tv);
 
     return (FD_ISSET(fileno(stdin), &readfds));
