@@ -187,7 +187,7 @@ bool probe_table(TranspositionTable& t_table, unsigned int ply,
                 {
                     return 1;
                 }
-                default: assert(false); // At least one flag must be set.
+                default: assert(0); // At least one flag must be set.
             }
         }
     }
