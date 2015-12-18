@@ -34,11 +34,11 @@
 
 // Piece values
 
-int S_QUEEN = 900;
-int S_ROOK = 500;
-int S_KNIGHT = 315;
-int S_BISHOP = 300;
-int S_PAWN = 100;
+const int S_QUEEN = 900;
+const int S_ROOK = 500;
+const int S_KNIGHT = 315;
+const int S_BISHOP = 300;
+const int S_PAWN = 100;
 
 // Global values
 
@@ -46,29 +46,42 @@ int S_PAWN = 100;
 // const int S_KING_IN_CHECK = -200;
 const int S_ENDGAME = 1500;
 
+// King
+
+const int S_KING_OPENFILE = -20;
+
 // Queens
 
-int S_QUEEN_OPENFILE = 5;
-int S_QUEEN_HALFOPENFILE = 3;
+const int S_QUEEN_OPENFILE = 5;
+const int S_QUEEN_HALFOPENFILE = 3;
 
 // Rooks
 
-int S_ROOK_OPENFILE = 10;
-int S_ROOK_HALFOPENFILE = 5;
+const int S_ROOK_OPENFILE = 10;
+const int S_ROOK_HALFOPENFILE = 5;
 
 // Bishops
 
-int S_BISHOP_PAIR = 30;
+const int S_BISHOP_PAIR = 30;
 
 // Pawns
 
 const int S_PAWN_ISOLATED = -10;
 const int S_PAWN_DOUBLED = -15;
 const int S_PAWN_PASSED[9] = { 0, 0, 5, 10, 20, 35, 60, 100, 0 };
+const int S_PAWN_SHIELD = 10;
 
 uint64 PAWN_ISO_MASK[64]; // Isolated pawn mask.
 uint64 PAWN_WPAS_MASK[64]; // White passed pawn mask.
 uint64 PAWN_BPAS_MASK[64]; // Black passed pawn mask.
+uint64 PAWN_WKS = 0xe000ULL;
+uint64 PAWN_WQS = 0x700ULL;
+uint64 PAWN_BKS = 0x7000000000000ULL;
+uint64 PAWN_BQS = 0xe0000000000000ULL;
+uint64 KING_WCK = 0xe0ULL;
+uint64 KING_WCQ = 0x7ULL;
+uint64 KING_BCK = 0x700000000000000ULL;
+uint64 KING_BCQ = 0xe000000000000000ULL;
 
 // Piece-square tables
 
@@ -141,7 +154,7 @@ const int BISHOP_ST[64] = {
 const int PAWN_ST[64] = {
 0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,   0   ,
 10  ,   5   ,   0   ,  -10  ,  -10  ,   0   ,   5   ,   10  ,
-5   ,   10  ,   0   ,   10  ,   10  ,   0   ,   10  ,   5   ,
+5   ,   20  ,   0   ,   10  ,   10  ,   0   ,   20  ,   5   ,
 0   ,   0   ,   5   ,   20  ,   20  ,   5   ,   0   ,   0   ,
 5   ,   5   ,   5   ,   10  ,   10  ,   5   ,   5   ,   5   ,
 10  ,   10  ,   10  ,   25  ,   25  ,   10  ,   10  ,   10  ,
@@ -260,218 +273,556 @@ int static_eval(Board& board)
     uint64 piece_bb; // Temporary variable.
 
     unsigned int white_mat = 0, black_mat = 0;
+    unsigned int wq = 0, wr = 0, wn = 0, wb = 0, wp = 0,
+        bq = 0, br = 0, bn = 0, bb = 0, bp = 0;
 
     // White
 
     /************************* WHITE QUEENS *************************/
 
     piece_bb = board.chessboard[wQ];
-    count = CNT_BITS(piece_bb);
-    score += count * S_QUEEN; // Material score
-    white_mat += count * S_QUEEN;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        index = POP_BIT(piece_bb);
-        file = GET_FILE(index);
-
-        if((pawns_bb & file) == 0) // Open file
-            score += S_QUEEN_OPENFILE;
-        else if((board.chessboard[wP] & file) == 0) // Half-open file
-            score += S_QUEEN_HALFOPENFILE;
-
-        score += QUEEN_ST[index]; // Piece-square table
-    }
+    wq = CNT_BITS(piece_bb);
+    white_mat += wq * S_QUEEN;
 
     /************************* WHITE ROOKS *************************/
 
     piece_bb = board.chessboard[wR];
-    count = CNT_BITS(piece_bb);
-    score += count * S_ROOK; // Material score
-    white_mat += count * S_ROOK;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        index = POP_BIT(piece_bb);
-        file = GET_FILE(index);
-
-        if((pawns_bb & file) == 0) // Open file
-            score += S_ROOK_OPENFILE;
-        else if((board.chessboard[wP] & file) == 0) // Half-open file
-            score += S_ROOK_HALFOPENFILE;
-
-        score += ROOK_ST[index]; // Piece-square table
-    }
+    wr = CNT_BITS(piece_bb);
+    white_mat += wr * S_ROOK;
 
     /************************* WHITE KNIGHTS *************************/
 
     piece_bb = board.chessboard[wN];
-    count = CNT_BITS(piece_bb);
-    score += count * S_KNIGHT; // Material score
-    white_mat += count * S_KNIGHT;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        score += KNIGHT_ST[POP_BIT(piece_bb)]; // Piece-square table
-    }
+    wn = CNT_BITS(piece_bb);
+    white_mat += wn * S_KNIGHT;
 
     /************************* WHITE BISHOPS *************************/
 
     piece_bb = board.chessboard[wB];
-    count = CNT_BITS(piece_bb);
-    score += count * S_BISHOP; // Material score
-    white_mat += count * S_BISHOP;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        score += BISHOP_ST[POP_BIT(piece_bb)]; // Piece-square table
-    }
-
-    if(count >= 2) score += S_BISHOP_PAIR;
+    wb = CNT_BITS(piece_bb);
+    white_mat += wb * S_BISHOP;
 
     /************************* WHITE PAWNS *************************/
 
     piece_bb = board.chessboard[wP];
-    count = CNT_BITS(piece_bb);
-    score += count * S_PAWN; // Material score
-    white_mat += count * S_PAWN;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        index = POP_BIT(piece_bb);
-        file = GET_FILE(index);
-        rank = GET_RANK(index);
-
-        if((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL) // Isolated
-            score += S_PAWN_ISOLATED;
-
-        uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
-            GET_BB(index);
-
-        if(pawn_on_file) score += S_PAWN_DOUBLED; // Doubled
-
-        if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL) // Passed
-            score += S_PAWN_PASSED[rank];
-
-        score += PAWN_ST[index]; // Piece-square table
-    }
+    wp = CNT_BITS(piece_bb);
+    white_mat += wp * S_PAWN;
 
     // Black
 
     /************************* BLACK QUEENS *************************/
 
     piece_bb = board.chessboard[bQ];
-    count = CNT_BITS(piece_bb);
-    score -= count * S_QUEEN; // Material score
-    black_mat += count * S_QUEEN;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        index = POP_BIT(piece_bb);
-        file = GET_FILE(index);
-
-        if((pawns_bb & file) == 0) // Open file
-            score -= S_QUEEN_OPENFILE;
-        else if((board.chessboard[bP] & file) == 0) // Half-open file
-            score -= S_QUEEN_HALFOPENFILE;
-
-        score -= QUEEN_ST[FLIPV[index]]; // Piece-square table
-    }
+    bq = CNT_BITS(piece_bb);
+    black_mat += bq * S_QUEEN;
 
     /************************* BLACK ROOKS *************************/
 
     piece_bb = board.chessboard[bR];
-    count = CNT_BITS(piece_bb);
-    score -= count * S_ROOK; // Material score
-    black_mat += count * S_ROOK;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        index = POP_BIT(piece_bb);
-        file = GET_FILE(index);
-
-        if((pawns_bb & file) == 0) // Open file
-            score -= S_ROOK_OPENFILE;
-        else if((board.chessboard[bP] & file) == 0) // Half-open file
-            score -= S_ROOK_HALFOPENFILE;
-
-        score -= ROOK_ST[FLIPV[index]]; // Piece-square table
-    }
+    br = CNT_BITS(piece_bb);
+    black_mat += br * S_ROOK;
 
     /************************* BLACK KNIGHTS *************************/
 
     piece_bb = board.chessboard[bN];
-    count = CNT_BITS(piece_bb);
-    score -= count * S_KNIGHT; // Material score
-    black_mat += count * S_KNIGHT;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        score -= KNIGHT_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
-    }
+    bn = CNT_BITS(piece_bb);
+    black_mat += bn * S_KNIGHT;
 
     /************************* BLACK BISHOPS *************************/
 
     piece_bb = board.chessboard[bB];
-    count = CNT_BITS(piece_bb);
-    score -= count * S_BISHOP; // Material score
-    black_mat += count * S_BISHOP;
-
-    for(unsigned int i = 0; i < count; i++)
-    {
-        score -= BISHOP_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
-    }
-
-    if(count >= 2) score -= S_BISHOP_PAIR;
+    bb = CNT_BITS(piece_bb);
+    black_mat += bb * S_BISHOP;
 
     /************************* BLACK PAWNS *************************/
 
     piece_bb = board.chessboard[bP];
-    count = CNT_BITS(piece_bb);
-    score -= count * S_PAWN; // Material score
-    black_mat += count * S_PAWN;
+    bp = CNT_BITS(piece_bb);
+    black_mat += bp * S_PAWN;
 
-    for(unsigned int i = 0; i < count; i++)
+    /************************* WHITE EVALUATION *************************/
+
+    if(white_mat > S_ENDGAME) // Regular evaluation.
     {
+        /************************* KING *************************/
+
+        piece_bb = board.chessboard[wK];
+
         index = POP_BIT(piece_bb);
         file = GET_FILE(index);
-        rank = GET_RANK(index);
 
-        if((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL) // Isolated
-            score -= S_PAWN_ISOLATED;
+        if(file == 1) 
+        {
+            if((pawns_bb & B_FILE[1]) == 0ULL) score += S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[2]) == 0ULL) score += S_KING_OPENFILE;
+        }
+        else if(file == 8)
+        {
+            if((pawns_bb & B_FILE[7]) == 0ULL) score += S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[8]) == 0ULL) score += S_KING_OPENFILE;
+        }
+        else 
+        {
+            if((pawns_bb & B_FILE[file - 1]) == 0ULL) score += S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[file]) == 0ULL) score += S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[file + 1]) == 0ULL) score += S_KING_OPENFILE;
+        }
 
-        uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
-            GET_BB(index);
+        score += KING_ST[index];
 
-        if(pawn_on_file) score -= S_PAWN_DOUBLED; // Doubled
+        // if(is_sq_attacked(index, WHITE, board)) score += S_KING_IN_CHECK;
 
-        if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL) // Passed
-            score -= S_PAWN_PASSED[9 - rank];
+        /************************* QUEENS *************************/
 
-        score -= PAWN_ST[FLIPV[index]]; // Piece-square table
+        piece_bb = board.chessboard[wQ];
+        count = wq;
+        score += count * S_QUEEN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score += S_QUEEN_OPENFILE;
+            else if((board.chessboard[wP] & file) == 0) // Half-open file
+                score += S_QUEEN_HALFOPENFILE;
+
+            score += QUEEN_ST[index]; // Piece-square table
+        }
+
+        /************************* ROOKS *************************/
+
+        piece_bb = board.chessboard[wR];
+        count = wr;
+        score += count * S_ROOK; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score += S_ROOK_OPENFILE;
+            else if((board.chessboard[wP] & file) == 0) // Half-open file
+                score += S_ROOK_HALFOPENFILE;
+
+            score += ROOK_ST[index]; // Piece-square table
+        }
+
+        /************************* KNIGHTS *************************/
+
+        piece_bb = board.chessboard[wN];
+        count = wn;
+        score += count * S_KNIGHT; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score += KNIGHT_ST[POP_BIT(piece_bb)]; // Piece-square table
+        }
+
+        /************************* BISHOPS *************************/
+
+        piece_bb = board.chessboard[wB];
+        count = wb;
+        score += count * S_BISHOP; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score += BISHOP_ST[POP_BIT(piece_bb)]; // Piece-square table
+        }
+
+        if(count >= 2) score += S_BISHOP_PAIR;
+
+        /************************* PAWNS *************************/
+
+        piece_bb = board.chessboard[wP];
+        count = wp;
+        score += count * S_PAWN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+            rank = GET_RANK(index);
+
+            // Isolated
+
+            if((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL)
+                score += S_PAWN_ISOLATED;
+
+            uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
+                GET_BB(index);
+
+            // Doubled
+
+            if(pawn_on_file) score += S_PAWN_DOUBLED;
+
+            // Passed
+
+            if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL)
+                score += S_PAWN_PASSED[rank];
+
+            score += PAWN_ST[index]; // Piece-square table
+
+             // Pawn Shield
+
+            if((board.chessboard[wK] & KING_WCK) && (board.chessboard[wP] & PAWN_WKS))
+                score += S_PAWN_SHIELD;
+
+            if((board.chessboard[wK] & KING_WCQ) && (board.chessboard[wP] & PAWN_WQS))
+                score += S_PAWN_SHIELD;
+            
+        }
+    }
+    else // Endgame evaluation.
+    {
+        /************************* KING *************************/
+
+        piece_bb = board.chessboard[wK];
+
+        index = POP_BIT(piece_bb);
+
+        score += KING_ST_END[index];
+
+        // if(is_sq_attacked(index, WHITE, board)) score += S_KING_IN_CHECK;
+
+        /************************* QUEENS *************************/
+
+        piece_bb = board.chessboard[wQ];
+        count = wq;
+        score += count * S_QUEEN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score += S_QUEEN_OPENFILE;
+            else if((board.chessboard[wP] & file) == 0) // Half-open file
+                score += S_QUEEN_HALFOPENFILE;
+
+            score += QUEEN_ST[index]; // Piece-square table
+        }
+
+        /************************* ROOKS *************************/
+
+        piece_bb = board.chessboard[wR];
+        count = wr;
+        score += count * S_ROOK; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score += S_ROOK_OPENFILE;
+            else if((board.chessboard[wP] & file) == 0) // Half-open file
+                score += S_ROOK_HALFOPENFILE;
+
+            score += ROOK_ST[index]; // Piece-square table
+        }
+
+        /************************* KNIGHTS *************************/
+
+        piece_bb = board.chessboard[wN];
+        count = wn;
+        score += count * S_KNIGHT; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score += KNIGHT_ST[POP_BIT(piece_bb)]; // Piece-square table
+        }
+
+        /************************* BISHOPS *************************/
+
+        piece_bb = board.chessboard[wB];
+        count = wb;
+        score += count * S_BISHOP; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score += BISHOP_ST[POP_BIT(piece_bb)]; // Piece-square table
+        }
+
+        if(count >= 2) score += S_BISHOP_PAIR;
+
+        /************************* PAWNS *************************/
+
+        piece_bb = board.chessboard[wP];
+        count = wp;
+        score += count * S_PAWN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+            rank = GET_RANK(index);
+
+            // Isolated
+
+            if((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL)
+                score += S_PAWN_ISOLATED;
+
+            uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
+                GET_BB(index);
+
+            // Doubled
+
+            if(pawn_on_file) score += S_PAWN_DOUBLED;
+
+            // Passed
+
+            if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL)
+                score += S_PAWN_PASSED[rank];
+
+            score += PAWN_ST[index]; // Piece-square table
+        }
     }
 
-    /************************* WHITE KING *************************/
+    /************************* BLACK EVALUATION *************************/
 
-    piece_bb = board.chessboard[wK];
+    if(black_mat > S_ENDGAME) // Regular evaluation.
+    {
+        /************************* KING *************************/
 
-    index = POP_BIT(piece_bb);
+        piece_bb = board.chessboard[bK];
 
-    if(white_mat <= S_ENDGAME) score += KING_ST_END[index];
-    else score += KING_ST[index];
+        index = POP_BIT(piece_bb);
+        file = GET_FILE(index);
 
-    // if(is_sq_attacked(index, WHITE, board)) score += S_KING_IN_CHECK;
 
-    /************************* BLACK KING *************************/
+        score -= KING_ST[FLIPV[index]];
 
-    piece_bb = board.chessboard[bK];
+        // if(is_sq_attacked(index, BLACK, board)) score -= S_KING_IN_CHECK;
 
-    index = POP_BIT(piece_bb);
+        if(file == 1) 
+        {
+            if((pawns_bb & B_FILE[1]) == 0ULL) score -= S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[2]) == 0ULL) score -= S_KING_OPENFILE;
+        }
+        else if(file == 8)
+        {
+            if((pawns_bb & B_FILE[7]) == 0ULL) score -= S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[8]) == 0ULL) score -= S_KING_OPENFILE;
+        }
+        else 
+        {
+            if((pawns_bb & B_FILE[file - 1]) == 0ULL) score -= S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[file]) == 0ULL) score -= S_KING_OPENFILE;
+            if((pawns_bb & B_FILE[file + 1]) == 0ULL) score -= S_KING_OPENFILE;
+        }
 
-    if(black_mat <= S_ENDGAME) score -= KING_ST_END[FLIPV[index]];
-    else score -= KING_ST[FLIPV[index]];
+        /************************* QUEENS *************************/
 
-    // if(is_sq_attacked(index, BLACK, board)) score -= S_KING_IN_CHECK;
+        piece_bb = board.chessboard[bQ];
+        count = bq;
+        score -= count * S_QUEEN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score -= S_QUEEN_OPENFILE;
+            else if((board.chessboard[bP] & file) == 0) // Half-open file
+                score -= S_QUEEN_HALFOPENFILE;
+
+            score -= QUEEN_ST[FLIPV[index]]; // Piece-square table
+        }
+
+        /************************* ROOKS *************************/
+
+        piece_bb = board.chessboard[bR];
+        count = br;
+        score -= count * S_ROOK; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score -= S_ROOK_OPENFILE;
+            else if((board.chessboard[bP] & file) == 0) // Half-open file
+                score -= S_ROOK_HALFOPENFILE;
+
+            score -= ROOK_ST[FLIPV[index]]; // Piece-square table
+        }
+
+        /************************* KNIGHTS *************************/
+
+        piece_bb = board.chessboard[bN];
+        count = bn;
+        score -= count * S_KNIGHT; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score -= KNIGHT_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
+        }
+
+        /************************* BISHOPS *************************/
+
+        piece_bb = board.chessboard[bB];
+        count = bb;
+        score -= count * S_BISHOP; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score -= BISHOP_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
+        }
+
+        if(count >= 2) score -= S_BISHOP_PAIR;
+
+        /************************* PAWNS *************************/
+
+        piece_bb = board.chessboard[bP];
+        count = bp;
+        score -= count * S_PAWN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+            rank = GET_RANK(index);
+
+            // Isolated
+
+            if((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL)
+                score -= S_PAWN_ISOLATED;
+
+            uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
+                GET_BB(index);
+
+            // Doubled
+
+            if(pawn_on_file) score -= S_PAWN_DOUBLED;
+
+            // Passed
+
+            if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL)
+                score -= S_PAWN_PASSED[9 - rank];
+
+            score -= PAWN_ST[FLIPV[index]]; // Piece-square table
+
+            // Pawn Shield
+
+            if((board.chessboard[bK] & KING_BCK) && (board.chessboard[bP] & PAWN_BKS))
+                score -= S_PAWN_SHIELD;
+
+            if((board.chessboard[bK] & KING_BCQ) && (board.chessboard[bP] & PAWN_BQS))
+                score -= S_PAWN_SHIELD;
+        }
+    }
+    else // Endgame evaluation.
+    {
+        /************************* KING *************************/
+
+        piece_bb = board.chessboard[bK];
+
+        index = POP_BIT(piece_bb);
+
+        score -= KING_ST_END[FLIPV[index]];
+
+        // if(is_sq_attacked(index, BLACK, board)) score -= S_KING_IN_CHECK;
+
+        /************************* QUEENS *************************/
+
+        piece_bb = board.chessboard[bQ];
+        count = bq;
+        score -= count * S_QUEEN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score -= S_QUEEN_OPENFILE;
+            else if((board.chessboard[bP] & file) == 0) // Half-open file
+                score -= S_QUEEN_HALFOPENFILE;
+
+            score -= QUEEN_ST[FLIPV[index]]; // Piece-square table
+        }
+
+        /************************* ROOKS *************************/
+
+        piece_bb = board.chessboard[bR];
+        count = br;
+        score -= count * S_ROOK; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+
+            if((pawns_bb & file) == 0) // Open file
+                score -= S_ROOK_OPENFILE;
+            else if((board.chessboard[bP] & file) == 0) // Half-open file
+                score -= S_ROOK_HALFOPENFILE;
+
+            score -= ROOK_ST[FLIPV[index]]; // Piece-square table
+        }
+
+        /************************* KNIGHTS *************************/
+
+        piece_bb = board.chessboard[bN];
+        count = bn;
+        score -= count * S_KNIGHT; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score -= KNIGHT_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
+        }
+
+        /************************* BISHOPS *************************/
+
+        piece_bb = board.chessboard[bB];
+        count = bb;
+        score -= count * S_BISHOP; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            score -= BISHOP_ST[FLIPV[POP_BIT(piece_bb)]]; // Piece-square table
+        }
+
+        if(count >= 2) score -= S_BISHOP_PAIR;
+
+        /************************* PAWNS *************************/
+
+        piece_bb = board.chessboard[bP];
+        count = bp;
+        score -= count * S_PAWN; // Material score
+
+        for(unsigned int i = 0; i < count; i++)
+        {
+            index = POP_BIT(piece_bb);
+            file = GET_FILE(index);
+            rank = GET_RANK(index);
+
+            // Isolated
+
+            if((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL)
+                score -= S_PAWN_ISOLATED;
+
+            uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
+                GET_BB(index);
+
+            // Doubled
+
+            if(pawn_on_file) score -= S_PAWN_DOUBLED;
+
+            // Passed
+
+            if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL)
+                score -= S_PAWN_PASSED[9 - rank];
+
+            score -= PAWN_ST[FLIPV[index]]; // Piece-square table
+        }
+    }
 
     // Return relative score.
 
