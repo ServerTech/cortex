@@ -36,9 +36,15 @@
 
 const int S_QUEEN = 900;
 const int S_ROOK = 500;
-const int S_KNIGHT = 315;
-const int S_BISHOP = 300;
+const int S_KNIGHT = 300;
+const int S_BISHOP = 315;
 const int S_PAWN = 100;
+
+const int S_QUEEN_END = 900;
+const int S_ROOK_END = 500;
+const int S_KNIGHT_END = 250;
+const int S_BISHOP_END = 300;
+const int S_PAWN_END = 100;
 
 // Global values
 
@@ -86,7 +92,7 @@ uint64 KING_BCQ = 0xe000000000000000ULL;
 // Piece-square tables
 
 const int KING_ST[64] = {
- 5  ,   7   ,   0   ,  -5   ,  -5   ,   0   ,   10  ,   5   ,
+ 5  ,   15  ,   10  ,  -5   ,   0   ,   10  ,   20  ,   5   ,
 -15 ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,
 -30 ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,
 -70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,
@@ -122,10 +128,10 @@ const int ROOK_ST[64] = {
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
 0   ,   3   ,   5   ,   10  ,   10  ,   5   ,   3   ,   0   ,
-0   ,   3   ,   5   ,   15  ,   15  ,   5   ,   3   ,   0   ,
 0   ,   3   ,   5   ,   10  ,   10  ,   5   ,   3   ,   0   ,
-0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0   ,
-25  ,   25  ,   25  ,   25  ,   25  ,   25  ,   25  ,   25  ,
+0   ,   3   ,   5   ,   10  ,   10  ,   5   ,   3   ,   0   ,
+0   ,   3   ,   5   ,   10  ,   10  ,   5   ,   3   ,   0   ,
+15  ,   15  ,   15  ,   15  ,   15  ,   15  ,   15  ,   15  ,
 0   ,   0   ,   5   ,   10  ,   10  ,   5   ,   0   ,   0
 };
 
@@ -491,7 +497,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wQ];
         count = wq;
-        score += count * S_QUEEN; // Material score
+        score += count * S_QUEEN_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -510,7 +516,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wR];
         count = wr;
-        score += count * S_ROOK; // Material score
+        score += count * S_ROOK_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -529,7 +535,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wN];
         count = wn;
-        score += count * S_KNIGHT; // Material score
+        score += count * S_KNIGHT_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -540,7 +546,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wB];
         count = wb;
-        score += count * S_BISHOP; // Material score
+        score += count * S_BISHOP_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -553,7 +559,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wP];
         count = wp;
-        score += count * S_PAWN; // Material score
+        score += count * S_PAWN_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -593,11 +599,6 @@ int static_eval(Board& board)
         index = POP_BIT(piece_bb);
         file = GET_FILE(index);
 
-
-        score -= KING_ST[FLIPV[index]];
-
-        // if(is_sq_attacked(index, BLACK, board)) score -= S_KING_IN_CHECK;
-
         if(file == 1) 
         {
             if((pawns_bb & B_FILE[1]) == 0ULL) score -= S_KING_OPENFILE;
@@ -614,6 +615,10 @@ int static_eval(Board& board)
             if((pawns_bb & B_FILE[file]) == 0ULL) score -= S_KING_OPENFILE;
             if((pawns_bb & B_FILE[file + 1]) == 0ULL) score -= S_KING_OPENFILE;
         }
+
+        score -= KING_ST[FLIPV[index]];
+
+        // if(is_sq_attacked(index, BLACK, board)) score -= S_KING_IN_CHECK;
 
         /************************* QUEENS *************************/
 
@@ -733,7 +738,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bQ];
         count = bq;
-        score -= count * S_QUEEN; // Material score
+        score -= count * S_QUEEN_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -752,7 +757,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bR];
         count = br;
-        score -= count * S_ROOK; // Material score
+        score -= count * S_ROOK_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -771,7 +776,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bN];
         count = bn;
-        score -= count * S_KNIGHT; // Material score
+        score -= count * S_KNIGHT_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -782,7 +787,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bB];
         count = bb;
-        score -= count * S_BISHOP; // Material score
+        score -= count * S_BISHOP_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -795,7 +800,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bP];
         count = bp;
-        score -= count * S_PAWN; // Material score
+        score -= count * S_PAWN_END; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
