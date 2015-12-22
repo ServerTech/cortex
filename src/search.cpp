@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename search.cpp
     @author Shreyas Vinod
-    @version 0.1.4
+    @version 0.1.5
 
     @brief The heart of the alpha-beta algorithm that makes computer
            chess possible.
@@ -17,6 +17,7 @@
     * 02/12/2015 0.1.2 Added null move pruning.
     * 06/12/2015 0.1.3 Added ponder move output during search.
     * 06/12/2015 0.1.4 Added in-check extensions.
+    * 21/12/2015 0.1.5 Added aspiration windows.
 */
 
 /**
@@ -347,8 +348,12 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
                     board.search_killers[0][board.ply] = list_move;
                 }
 
+                /********** BUGGY CODE **********/
+                /*
                 store_entry(board.t_table, board.ply, board.hash_key, list_move,
                     beta, depth, TFBETA);
+                */
+                /********************************/
 
                 return beta;
             }
@@ -392,11 +397,16 @@ int alpha_beta(int alpha, int beta, unsigned int depth, Board& board,
         store_entry(board.t_table, board.ply, board.hash_key, best_move,
             alpha, depth, TFEXACT);
     }
+
+    /********** BUGGY CODE **********/
+    /*
     else
     {
         store_entry(board.t_table, board.ply, board.hash_key, best_move,
             alpha, depth, TFALPHA);
     }
+    */
+    /********************************/
 
     return alpha;
 }
@@ -414,6 +424,7 @@ void search(Board& board, SearchInfo& search_info)
 {
     unsigned int best_move = NO_MOVE, ponder_move = NO_MOVE;
     int best_score = -INFINITY_C;
+    int alpha = -INFINITY_C, beta = INFINITY_C;
 
     unsigned int pv_moves; // Number of PV moves found.
 
@@ -422,10 +433,26 @@ void search(Board& board, SearchInfo& search_info)
     for(unsigned int current_depth = 1; current_depth <= search_info.depth;
         current_depth++) // Iterative deepening!
     {
-        best_score = alpha_beta(-INFINITY_C, INFINITY_C, current_depth,
+        best_score = alpha_beta(alpha, beta, current_depth,
             board, search_info, 1); // Call Alpha-Beta and get the best score.
 
         if(search_info.stopped) break; // Break out if search was interrupted.
+
+        assert(alpha >= -INFINITY_C && alpha <= INFINITY_C);
+        assert(beta >= -INFINITY_C && beta <= INFINITY_C);
+
+        if(best_score <= alpha || best_score >= beta) // Outside window.
+        {
+            alpha = -INFINITY_C;
+            beta = INFINITY_C;
+            current_depth--;
+            continue; // Search again without windows.
+        }
+
+        // Set aspiration window.
+
+        alpha = best_score - 25;
+        beta = best_score + 25;
 
         // Get the PV line.
 

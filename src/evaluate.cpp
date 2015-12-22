@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename evaluate.cpp
     @author Anna Grygierzec
-    @version 0.1.2
+    @version 1.0.0
 
     @brief Static evaluation function that returns an objective score
            of the game state.
@@ -12,6 +12,7 @@
     * 29/11/2015 0.1.0 Initial version.
     * 06/12/2015 0.1.1 Added checks for isolated and passed pawns.
     * 06/12/2015 0.1.2 Added checks of open/half-open files.
+    * 22/12/2015 1.0.0 Added backward pawns, king on and near open file, pawn shield, rook and bishop bonus for lost pawns.
 */
 
 /**
@@ -37,7 +38,7 @@
 const int S_QUEEN = 900;
 const int S_ROOK = 500;
 const int S_KNIGHT = 300;
-const int S_BISHOP = 315;
+const int S_BISHOP = 335;
 const int S_PAWN = 100;
 
 const int S_QUEEN_END = 900;
@@ -65,10 +66,12 @@ const int S_QUEEN_HALFOPENFILE = 3;
 
 const int S_ROOK_OPENFILE = 10;
 const int S_ROOK_HALFOPENFILE = 5;
+const int S_ROOK_PAWNBONUS = 7;
 
 // Bishops
 
-const int S_BISHOP_PAIR = 30;
+const int S_BISHOP_PAIR = 25;
+const int S_BISHOP_PAWNBONUS = 4;
 
 // Pawns
 
@@ -76,10 +79,12 @@ const int S_PAWN_ISOLATED = -10;
 const int S_PAWN_DOUBLED = -15;
 const int S_PAWN_PASSED[9] = { 0, 0, 5, 10, 20, 35, 60, 100, 0 };
 const int S_PAWN_SHIELD = 10;
+const int S_PAWN_BACKWARD = -15;
 
 uint64 PAWN_ISO_MASK[64]; // Isolated pawn mask.
 uint64 PAWN_WPAS_MASK[64]; // White passed pawn mask.
 uint64 PAWN_BPAS_MASK[64]; // Black passed pawn mask.
+uint64 PAWN_NEXT_MASK[64]; // Fields near a pawn mask.
 uint64 PAWN_WKS = 0xe000ULL;
 uint64 PAWN_WQS = 0x700ULL;
 uint64 PAWN_BKS = 0x7000000000000ULL;
@@ -92,7 +97,7 @@ uint64 KING_BCQ = 0xe000000000000000ULL;
 // Piece-square tables
 
 const int KING_ST[64] = {
- 5  ,   15  ,   10  ,  -5   ,   0   ,   10  ,   20  ,   5   ,
+ 5  ,   10  ,   8   ,  -5   ,   0   ,   5   ,   10  ,   5   ,
 -15 ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,  -15  ,
 -30 ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,  -30  ,
 -70 ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,  -70  ,
@@ -251,6 +256,10 @@ void init_evalmasks()
                 sq -= 8;
             }
         }
+
+        PAWN_NEXT_MASK[i] =
+            (PAWN_WPAS_MASK[i] | PAWN_BPAS_MASK[i]) ^
+            (B_FILE[GET_FILE(i)] | PAWN_ISO_MASK[i]) ^ GET_BB(i);
     }
 }
 
@@ -274,9 +283,10 @@ int static_eval(Board& board)
     int score = 0;
 
     uint64 pawns_bb = board.chessboard[wP] | board.chessboard[bP];
-
+    int bishop_score, bishop_score_end, rook_score, rook_score_end;
     unsigned int count, index, file, rank; // Temporary variables.
     uint64 piece_bb; // Temporary variable.
+    bool isolated;
 
     unsigned int white_mat = 0, black_mat = 0;
     unsigned int wq = 0, wr = 0, wn = 0, wb = 0, wp = 0,
@@ -346,6 +356,13 @@ int static_eval(Board& board)
     bp = CNT_BITS(piece_bb);
     black_mat += bp * S_PAWN;
 
+    // Adjust scores as pawns as lost.
+
+    bishop_score = S_BISHOP + (16 - wp - bp) * S_BISHOP_PAWNBONUS;
+    bishop_score_end = S_BISHOP_END + (16 - wp - bp) * S_BISHOP_PAWNBONUS;
+    rook_score = S_ROOK + (16 - wp - bp) * S_ROOK_PAWNBONUS;
+    rook_score_end = S_ROOK_END + (16 - wp - bp) * S_ROOK_PAWNBONUS;
+
     /************************* WHITE EVALUATION *************************/
 
     if(white_mat > S_ENDGAME) // Regular evaluation.
@@ -401,7 +418,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wR];
         count = wr;
-        score += count * S_ROOK; // Material score
+        score += count * rook_score; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -431,7 +448,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wB];
         count = wb;
-        score += count * S_BISHOP; // Material score
+        score += count * bishop_score; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -446,6 +463,7 @@ int static_eval(Board& board)
         count = wp;
         score += count * S_PAWN; // Material score
 
+
         for(unsigned int i = 0; i < count; i++)
         {
             index = POP_BIT(piece_bb);
@@ -454,8 +472,9 @@ int static_eval(Board& board)
 
             // Isolated
 
-            if((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL)
-                score += S_PAWN_ISOLATED;
+            isolated = ((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL);
+
+            if(isolated) score += S_PAWN_ISOLATED;
 
             uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
                 GET_BB(index);
@@ -464,14 +483,33 @@ int static_eval(Board& board)
 
             if(pawn_on_file) score += S_PAWN_DOUBLED;
 
-            // Passed
+            // Passed or backward
 
             if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL)
                 score += S_PAWN_PASSED[rank];
+            else if(board.chessboard[bP] & PAWN_ISO_MASK[index] & PAWN_WPAS_MASK[index])
+            {
+                if(isolated)
+                    score += S_PAWN_BACKWARD;
+                else if((index > 15) && (index < 40) &&
+                    ((board.chessboard[wP] & PAWN_ISO_MASK[index] &
+                    PAWN_BPAS_MASK[index + 8]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index + 16] & board.chessboard[bP]))
+                {
+                    score += S_PAWN_BACKWARD;
+                }
+                else if((index < 16) &&
+                    ((PAWN_NEXT_MASK[index] & board.chessboard[wP]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index + 16] & board.chessboard[bP]) &&
+                    (PAWN_NEXT_MASK[index + 24] & board.chessboard[bP]))
+                {
+                    score += S_PAWN_BACKWARD;
+                }
+            }
 
             score += PAWN_ST[index]; // Piece-square table
 
-             // Pawn Shield
+             // Pawn shield
 
             if((board.chessboard[wK] & KING_WCK) && (board.chessboard[wP] & PAWN_WKS))
                 score += S_PAWN_SHIELD;
@@ -516,7 +554,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wR];
         count = wr;
-        score += count * S_ROOK_END; // Material score
+        score += count * rook_score_end; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -546,7 +584,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[wB];
         count = wb;
-        score += count * S_BISHOP_END; // Material score
+        score += count * bishop_score_end; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -569,8 +607,9 @@ int static_eval(Board& board)
 
             // Isolated
 
-            if((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL)
-                score += S_PAWN_ISOLATED;
+            isolated = ((board.chessboard[wP] & PAWN_ISO_MASK[index]) == 0ULL);
+
+            if(isolated) score += S_PAWN_ISOLATED;
 
             uint64 pawn_on_file = (board.chessboard[wP] & B_FILE[file]) ^
                 GET_BB(index);
@@ -579,10 +618,29 @@ int static_eval(Board& board)
 
             if(pawn_on_file) score += S_PAWN_DOUBLED;
 
-            // Passed
+            // Passed or backward
 
             if((board.chessboard[bP] & PAWN_WPAS_MASK[index]) == 0ULL)
                 score += S_PAWN_PASSED[rank];
+            else if(board.chessboard[bP] & PAWN_ISO_MASK[index] & PAWN_WPAS_MASK[index])
+            {
+                if(isolated)
+                    score += S_PAWN_BACKWARD;
+                else if((index > 15) && (index < 40) &&
+                    ((board.chessboard[wP] & PAWN_ISO_MASK[index] &
+                    PAWN_BPAS_MASK[index + 8]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index + 16] & board.chessboard[bP]))
+                {
+                    score += S_PAWN_BACKWARD;
+                }
+                else if((index < 16) &&
+                    ((PAWN_NEXT_MASK[index] & board.chessboard[wP]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index + 16] & board.chessboard[bP]) &&
+                    (PAWN_NEXT_MASK[index + 24] & board.chessboard[bP]))
+                {
+                    score += S_PAWN_BACKWARD;
+                }
+            }
 
             score += PAWN_ST[index]; // Piece-square table
         }
@@ -643,7 +701,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bR];
         count = br;
-        score -= count * S_ROOK; // Material score
+        score -= count * rook_score; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -673,7 +731,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bB];
         count = bb;
-        score -= count * S_BISHOP; // Material score
+        score -= count * bishop_score; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -696,8 +754,9 @@ int static_eval(Board& board)
 
             // Isolated
 
-            if((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL)
-                score -= S_PAWN_ISOLATED;
+            isolated = ((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL);
+
+            if(isolated) score -= S_PAWN_ISOLATED;
 
             uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
                 GET_BB(index);
@@ -706,14 +765,33 @@ int static_eval(Board& board)
 
             if(pawn_on_file) score -= S_PAWN_DOUBLED;
 
-            // Passed
+            // Passed or backward
 
             if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL)
                 score -= S_PAWN_PASSED[9 - rank];
+            else if(board.chessboard[wP] & PAWN_ISO_MASK[index] & PAWN_BPAS_MASK[index])
+            {
+                if(isolated)
+                    score -= S_PAWN_BACKWARD;
+                else if((index > 15) && (index < 48) &&
+                    ((board.chessboard[bP] & PAWN_ISO_MASK[index] &
+                    PAWN_WPAS_MASK[index - 8]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index - 16] & board.chessboard[wP]))
+                {
+                    score -= S_PAWN_BACKWARD;
+                }
+                else if((index > 47) &&
+                    ((PAWN_NEXT_MASK[index] & board.chessboard[bP]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index - 16] & board.chessboard[wP]) &&
+                    (PAWN_NEXT_MASK[index - 24] & board.chessboard[wP]))
+                {
+                    score -= S_PAWN_BACKWARD;
+                }
+            }
 
             score -= PAWN_ST[FLIPV[index]]; // Piece-square table
 
-            // Pawn Shield
+            // Pawn shield
 
             if((board.chessboard[bK] & KING_BCK) && (board.chessboard[bP] & PAWN_BKS))
                 score -= S_PAWN_SHIELD;
@@ -757,7 +835,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bR];
         count = br;
-        score -= count * S_ROOK_END; // Material score
+        score -= count * rook_score_end; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -787,7 +865,7 @@ int static_eval(Board& board)
 
         piece_bb = board.chessboard[bB];
         count = bb;
-        score -= count * S_BISHOP_END; // Material score
+        score -= count * bishop_score_end; // Material score
 
         for(unsigned int i = 0; i < count; i++)
         {
@@ -810,8 +888,9 @@ int static_eval(Board& board)
 
             // Isolated
 
-            if((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL)
-                score -= S_PAWN_ISOLATED;
+            isolated = ((board.chessboard[bP] & PAWN_ISO_MASK[index]) == 0ULL);
+
+            if(isolated) score -= S_PAWN_ISOLATED;
 
             uint64 pawn_on_file = (board.chessboard[bP] & B_FILE[file]) ^
                 GET_BB(index);
@@ -820,10 +899,29 @@ int static_eval(Board& board)
 
             if(pawn_on_file) score -= S_PAWN_DOUBLED;
 
-            // Passed
+            // Passed or backward
 
             if((board.chessboard[wP] & PAWN_BPAS_MASK[index]) == 0ULL)
                 score -= S_PAWN_PASSED[9 - rank];
+            else if(board.chessboard[wP] & PAWN_ISO_MASK[index] & PAWN_BPAS_MASK[index])
+            {
+                if(isolated)
+                    score -= S_PAWN_BACKWARD;
+                else if((index > 15) && (index < 48) &&
+                    ((board.chessboard[bP] & PAWN_ISO_MASK[index] &
+                    PAWN_WPAS_MASK[index - 8]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index - 16] & board.chessboard[wP]))
+                {
+                    score -= S_PAWN_BACKWARD;
+                }
+                else if((index > 47) &&
+                    ((PAWN_NEXT_MASK[index] & board.chessboard[bP]) == 0ULL) &&
+                    (PAWN_NEXT_MASK[index - 16] & board.chessboard[wP]) &&
+                    (PAWN_NEXT_MASK[index - 24] & board.chessboard[wP]))
+                {
+                    score -= S_PAWN_BACKWARD;
+                }
+            }
 
             score -= PAWN_ST[FLIPV[index]]; // Piece-square table
         }
