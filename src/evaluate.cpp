@@ -356,6 +356,47 @@ int static_eval(Board& board)
     bp = CNT_BITS(piece_bb);
     black_mat += bp * S_PAWN;
 
+    // Draw by insufficient material detection.
+    // Note: Does not detect draw when two or more bishops on the same colour
+    //       are involved. KNN vs. K is considered a draw, since a forced
+    //       checkmate is not possible.
+
+    count = 0;
+    piece_bb = board.chessboard[wP];
+
+    for(unsigned int i = 0; i < wp; i++) // Loop over white pawns.
+    {
+        index = POP_BIT(piece_bb);
+
+        if((GET_BB(index + 8) & board.chessboard[bP]) &&
+            (PAWN_NEXT_MASK[index + 8] & board.chessboard[bP]) == 0ULL)
+        {
+            count++;
+        }
+    }
+
+    piece_bb = board.chessboard[bP];
+
+    for(unsigned int i = 0; i < bp; i++) // Loop over black pawns.
+    {
+        index = POP_BIT(piece_bb);
+
+        if((GET_BB(index - 8) & board.chessboard[wP]) &&
+            (PAWN_NEXT_MASK[index - 8] & board.chessboard[wP]) == 0ULL)
+        {
+            count++;
+        }
+    }
+
+    if(wp + bp == 0 || wp + bp == count) // No pawns remaining/movable.
+    {
+        if(wq + wr + wn + wb + bq + br + bn + bb == 0) return 0;
+        else if((wq + wr + wn + bq + br + bn + bb == 0) && wb <= 1) return 0;
+        else if((wq + wr + wn + wb + bq + br + bn == 0) && bb <= 1) return 0;
+        else if((wq + wr + wb + bq + br + bn + bb == 0) && wn <= 2) return 0;
+        else if((wq + wr + wn + wb + bq + br + bb == 0) && bn <= 2) return 0;
+    }
+
     // Adjust scores as pawns as lost.
 
     bishop_score = S_BISHOP + (16 - wp - bp) * S_BISHOP_PAWNBONUS;
