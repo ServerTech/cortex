@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename movegen.h
     @author Shreyas Vinod
-    @version 0.1.2
+    @version 1.0.0
 
     @brief Generates moves given a board position.
 
@@ -14,6 +14,7 @@
     * 24/11/2015 0.1.0 Initial version.
     * 29/11/2015 0.1.1 Added functions to generate just captures.
     * 05/12/2015 0.1.2 Added functions to generate legal moves and captures.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

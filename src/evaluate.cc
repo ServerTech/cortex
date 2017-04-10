@@ -1,6 +1,6 @@
 /*
     Cortex - Self-learning Chess Engine
-    @filename evaluate.cpp
+    @filename evaluate.cc
     @author Anna Grygierzec
     @version 1.0.0
 
@@ -12,12 +12,14 @@
     * 29/11/2015 0.1.0 Initial version.
     * 06/12/2015 0.1.1 Added checks for isolated and passed pawns.
     * 06/12/2015 0.1.2 Added checks of open/half-open files.
-    * 22/12/2015 1.0.0 Added backward pawns, king on and near open file, pawn shield, rook and bishop bonus for lost pawns.
+    * 22/12/2015 0.1.3 Added backward pawns, king on and near open file,
+                       pawn shield, rook and bishop bonus for lost pawns.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**
     @file
-    @filename evaluate.cpp
+    @filename evaluate.cc
     @author Anna Grygierzec
 
     @brief Static evaluation function that returns an objective score

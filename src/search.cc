@@ -1,8 +1,8 @@
 /*
     Cortex - Self-learning Chess Engine
-    @filename search.cpp
+    @filename search.cc
     @author Shreyas Vinod
-    @version 0.1.5
+    @version 1.0.0
 
     @brief The heart of the alpha-beta algorithm that makes computer
            chess possible.
@@ -19,11 +19,12 @@
     * 06/12/2015 0.1.4 Added in-check extensions.
     * 21/12/2015 0.1.5 Added aspiration windows.
     * 10/04/2016 0.1.6 Removed aspiration windows (buggy).
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**
     @file
-    @filename search.cpp
+    @filename search.cc
     @author Shreyas Vinod
 
     @brief The heart of the alpha-beta algorithm that makes computer

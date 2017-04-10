@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename move.h
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 1.0.0
 
     @brief Keeps key structures for handling moves, especially during move
            generation.
@@ -10,6 +10,7 @@
     ******************** VERSION CONTROL ********************
     * 15/11/2015 File created.
     * 15/11/2015 0.1.0 Initial version.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

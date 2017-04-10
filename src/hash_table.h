@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename hash_table.h
     @author Shreyas Vinod
-    @version 0.1.1
+    @version 1.0.0
 
     @brief Handles hash tables for efficient move searching.
 
@@ -13,6 +13,7 @@
     * 25/11/2015 File created.
     * 28/11/2015 0.1.0 Initial version.
     * 03/12/2015 0.1.1 Updated to a full transposition table.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

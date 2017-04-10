@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename chronos.h
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 1.0.0
 
     @brief A few functions to keep track of time. Requires the Boost C++
            libraries.
@@ -10,6 +10,7 @@
     ******************** VERSION CONTROL ********************
     * 02/12/2015 File created.
     * 02/12/2015 0.1.0 Initial version.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

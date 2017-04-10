@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename defs.h
     @author Shreyas Vinod
-    @version 0.1.6
+    @version 1.0.0
 
     @brief Holds definitions for code readability and speed improvements.
 
@@ -16,6 +16,7 @@
     * 28/11/2015 0.1.4 Added MAX_DEPTH.
     * 06/12/2015 0.1.5 Added FLIPV[64] and FLIPV_BB.
     * 06/12/2015 0.1.6 Added pretty_bitboard(uint64).
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**
@@ -31,7 +32,7 @@
 
 // Compile settings
 
-// #define NDEBUG // Disabled assert() if defined.
+// #define NDEBUG // Disables assert() if defined.
 // #define WIN32 // Uncomment if compiling for Windows.
 // #define VERBOSE // Enables more output.
 

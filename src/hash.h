@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename hash.h
     @author Shreyas Vinod
-    @version 0.1.1
+    @version 1.0.0
 
     @brief Handles zobrist hashing to generate hashes for game states.
 
@@ -14,7 +14,8 @@
     * 14/11/2015 0.1.0 Initial version.
     * 22/11/2015 0.1.1 Added helper functions.
         * Added HASH_PIECE(Board&, unsigned int, unsigned int),
-            HASH_SIDE(Board&), HASH_CA(Board&) and HASH_EP(Board&).
+          HASH_SIDE(Board&), HASH_CA(Board&) and HASH_EP(Board&).
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

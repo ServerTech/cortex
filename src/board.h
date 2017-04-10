@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename board.h
     @author Shreyas Vinod
-    @version 0.4.8
+    @version 1.0.0
 
     @brief Handles the board representation for the engine.
 
@@ -65,6 +65,7 @@
     * 04/12/2015 0.4.6 Added FEN parsing for fifty move and ply counters.
     * 06/12/2015 0.4.7 Added board_flipv(Board&).
     * 06/12/2015 0.4.8 pretty_board(Board&) now prints evaluation score.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

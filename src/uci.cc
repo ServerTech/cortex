@@ -1,8 +1,8 @@
 /*
     Cortex - Self-learning Chess Engine
-    @filename uci.h
+    @filename uci.cc
     @author Shreyas Vinod
-    @version 0.1.0
+    @version 1.0.0
 
     @brief Includes everything needed to support the UCI
            (Universal Chess Interface) protocol.
@@ -10,11 +10,12 @@
     ******************** VERSION CONTROL ********************
     * 02/12/2015 File created.
     * 02/12/2015 0.1.0 Initial version.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**
     @file
-    @filename uci.h
+    @filename uci.cc
     @author Shreyas Vinod
 
     @brief Includes everything needed to support the UCI

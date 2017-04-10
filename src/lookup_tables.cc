@@ -1,8 +1,8 @@
 /*
     Cortex - Self-learning Chess Engine
-    @filename lookup_tables.cpp
+    @filename lookup_tables.cc
     @author Shreyas Vinod
-    @version 0.1.2
+    @version 1.0.0
 
     @brief A collection of pre-calculated lookup tables for move generation.
            Based on Little-Endian Rank-File mapping (LERF).
@@ -11,11 +11,12 @@
     * 09/07/2015 File created.
     * 27/07/2015 0.1.0 Initial version.
     * 15/11/2015 0.1.2 Names are now more generic.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**
     @file
-    @filename lookup_tables.cpp
+    @filename lookup_tables.cc
     @author Shreyas Vinod
 
     @brief A collection of pre-calculated lookup tables for move generation.

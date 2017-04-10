@@ -11,7 +11,7 @@
 
     ******************** VERSION CONTROL ********************
     * 05/12/2015 File created.
-    * 05/12/2015 1.0.0 Final. Will never be touched again.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**

@@ -2,7 +2,7 @@
     Cortex - Self-learning Chess Engine
     @filename search.h
     @author Shreyas Vinod
-    @version 0.1.4
+    @version 1.0.0
 
     @brief The heart of the alpha-beta algorithm that makes computer
            chess possible.
@@ -17,6 +17,7 @@
     * 02/12/2015 0.1.2 Added null move pruning.
     * 06/12/2015 0.1.3 Added ponder move output during search.
     * 06/12/2015 0.1.4 Added in-check extensions.
+    * 10/04/2017 1.0.0 Release 'Primeval'
 */
 
 /**
